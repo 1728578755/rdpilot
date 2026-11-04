@@ -64,6 +64,20 @@
 
 ---
 
+## 下载
+
+已构建的安装包见 [Releases](https://github.com/1728578755/rdpilot/releases/latest)：
+
+| 文件 | 说明 |
+|---|---|
+| `RDPilot-1.0.0-x64-setup.exe` | NSIS 安装包，可选安装目录，创建开始菜单快捷方式 |
+| `RDPilot-1.0.0-x64-portable.exe` | 便携版，双击即用，不写注册表 |
+| `SHA256SUMS.txt` | 校验和，`sha256sum -c SHA256SUMS.txt` |
+
+构建产物未签名，首次运行会触发 SmartScreen「更多信息 → 仍要运行」。
+
+---
+
 ## 从源码构建
 
 **环境要求**

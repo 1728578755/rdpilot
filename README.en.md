@@ -33,6 +33,18 @@ machine.
 
 ---
 
+## Download
+
+Prebuilt packages are on the [Releases](https://github.com/1728578755/rdpilot/releases/latest) page:
+
+- `RDPilot-1.0.0-x64-setup.exe` — NSIS installer
+- `RDPilot-1.0.0-x64-portable.exe` — portable single file
+- `SHA256SUMS.txt` — verify with `sha256sum -c SHA256SUMS.txt`
+
+The binaries are unsigned, so the first run triggers SmartScreen.
+
+---
+
 ## Build from source
 
 Requirements: Windows 10 1809+ / Windows 11 (x64), Node.js 22+, and the `csc.exe` that ships with
