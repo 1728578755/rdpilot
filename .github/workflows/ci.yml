@@ -66,6 +66,22 @@ jobs:
       - name: Install
         run: npm ci
 
+      # electron-builder 解压 winCodeSign 时调用 7za。优先用 7zip-bin 里的二进制，
+      # 缺失时退回系统 7-Zip，并确保 PATH 上有一个叫 7za 的可执行文件。
+      - name: Prepare 7-Zip
+        shell: pwsh
+        run: |
+          $tools = Join-Path $PWD '.tools'
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          $src = Join-Path $PWD 'node_modules\7zip-bin\win\x64\7za.exe'
+          if (-not (Test-Path $src)) {
+            choco install 7zip -y --no-progress
+            $src = 'C:\Program Files\7-Zip\7z.exe'
+          }
+          if (-not (Test-Path $src)) { throw '7-Zip executable not found' }
+          Copy-Item $src (Join-Path $tools '7za.exe') -Force
+          Add-Content -Path $env:GITHUB_PATH -Value $tools
+
       - name: Build installer and portable exe
         run: npm run build:win
 
