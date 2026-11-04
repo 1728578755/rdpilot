@@ -50,20 +50,16 @@ for (const name of ['tray-light.png', 'tray-light-16.png', 'tray-dark.png', 'tra
 }
 check('extraResources 未误带 resources/icons 全目录', !builder.includes('icons/**/*'))
 /*
- * wall/host 两套图标仍随包发布，但**已不被任何窗口引用**（用户要求任务栏/Alt-Tab 沿用原有
- * icon.ico/icon.png，b8-native 的两个窗口现在只按 icon.ico → icon.png 查找）。
- * 保留进包是给 About 页/未来用途；这里同时守住两件事：不能被收窄掉，也不能被悄悄接回窗口。
+ * 托盘与任务栏统一使用品牌图 tray.png / icon.png。light/dark 变体仍随包发布，
+ * 只用于回滚；这里守住"窗口不要悄悄接回 icons/wall.ico|host.ico"。
  */
-for (const name of ['icons/wall.ico', 'icons/host.ico']) {
-  check(`extraResources 包含 ${name}（留给 About 页/未来用途）`, builder.includes(name))
-}
 {
   // 只查代码：注释里写"不再引用 icons/wall.ico"属于正常说明，先剥注释再匹配
   const codeOf = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1')
   const wallCode = codeOf(read('src/main/services/wallWindowService.ts'))
   const hostCode = codeOf(read('src/main/services/embeddedSessionService.ts'))
   check(
-    '窗口代码未再引用 icons/wall.ico|host.ico（任务栏统一走 icon.ico → icon.png）',
+    '窗口代码未引用 icons/wall.ico|host.ico（任务栏统一走 icon.ico → icon.png）',
     !/icons\/wall|wall\.ico/.test(wallCode) && !/icons\/host|host\.ico/.test(hostCode)
   )
 }
@@ -99,23 +95,22 @@ check('浅色/深色两套内容不同（不是同一张图）', lightBytes > 0 
 /* ------------------------ 4. iconService / trayService 接线 ------------------------ */
 
 const iconService = read('src/main/services/iconService.ts')
-const trayTernary = iconService.match(/export function pickTrayIcon\(dark: boolean\): string \{\s*return dark \? '([^']+)' : '([^']+)'/)
 check(
-  "pickTrayIcon(dark) 映射：dark→tray-dark.png / light→tray-light.png",
-  Boolean(trayTernary) && trayTernary[1] === 'tray-dark.png' && trayTernary[2] === 'tray-light.png',
-  trayTernary ? `${trayTernary[1]} / ${trayTernary[2]}` : '未匹配'
+  "pickTrayIcon 统一返回品牌图 tray.png（明暗一致）",
+  /export function pickTrayIcon\(dark: boolean\): string \{\s*void dark\s*return 'tray\.png'/.test(iconService)
 )
 check(
-  'pickTrayIcon(true) 与 pickTrayIcon(false) 返回不同文件',
-  Boolean(trayTernary) && trayTernary[1] !== trayTernary[2]
+  "pickTrayIconSmall 返回 tray-16.png",
+  /export function pickTrayIconSmall\(dark: boolean\): string \{\s*void dark\s*return 'tray-16\.png'/.test(iconService)
 )
 check(
-  '两套映射指向的文件都存在',
-  Boolean(trayTernary) &&
-    existsSync(resolve('resources', trayTernary[1])) &&
-    existsSync(resolve('resources', trayTernary[2]))
+  'pickTrayIcon 与 pickTrayIconSmall 指向的文件都存在',
+  existsSync(resolve('resources', 'tray.png')) && existsSync(resolve('resources', 'tray-16.png'))
 )
-check('loadTrayIcon 兜底旧 tray.png', /pickTrayIcon\(dark\), pickTrayIconSmall\(dark\), 'tray\.png'/.test(iconService))
+check(
+  'loadTrayIcon 依次兜底 tray.png → tray-16.png → icon.png',
+  /pickTrayIcon\(dark\), pickTrayIconSmall\(dark\), 'icon\.png'/.test(iconService)
+)
 check('loadBrandIcon 读 icon.png', /loadFirst\(\['icon\.png', 'app-icon\.png'\]\)/.test(iconService))
 
 const traySrc = read('src/main/services/trayService.ts')
