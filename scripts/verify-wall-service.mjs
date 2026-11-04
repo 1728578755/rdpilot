@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * 视频墙服务层验收（Batch 6）—— 不启动 Electron：
- *  - 直接 import `src/main/services/wallState.ts` 的纯函数（Node 22 类型剥离）；
+ * 视频墙服务层验收—— 不启动 Electron：
+ *  - 用 esbuild 打包 `src/main/services/wallState.ts` 后 import 纯函数；
  *  - 对 `wallWindowService.ts` 做源码级接线断言（顺序敏感的部分用下标比较）。
  *
  * 为什么需要它：`wallWindowService` 依赖 electron（BrowserWindow/screen），
@@ -10,9 +10,11 @@
  *
  * 用法：node scripts/verify-wall-service.mjs
  */
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+
+import { build } from 'esbuild'
 
 const root = process.cwd()
 const failures = []
@@ -26,7 +28,21 @@ function equal(name, actual, expected) {
   check(name, ok, ok ? '' : `实际=${JSON.stringify(actual)} 期望=${JSON.stringify(expected)}`)
 }
 
-const state = await import(pathToFileURL(join(root, 'src/main/services/wallState.ts')).href)
+// 先打包再 import：Node 20 没有 TS 类型剥离，直接 import .ts 会报
+// ERR_UNKNOWN_FILE_EXTENSION。打包产物只能反映纯函数，wallWindowService
+// 仍然只用源码级断言。
+const stateOut = join(root, '.tmp', 'verify-wall-service', 'wallState.mjs')
+mkdirSync(dirname(stateOut), { recursive: true })
+await build({
+  entryPoints: [join(root, 'src/main/services/wallState.ts')],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  outfile: stateOut,
+  logLevel: 'silent'
+})
+const state = await import(pathToFileURL(stateOut).href)
 
 console.log('=== 1) 协议解析 ===')
 equal('parseWallLine：V1 前缀 + 制表符', state.parseWallLine('V1 CONNECTED\tabc'), {
