@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      script-src 不含 'unsafe-inline'：
+        - 主题初始化脚本按内容 sha256 放行（Vite dev/build 都不会改写这段 classic inline script，
+          .gitattributes 固定 LF 行尾，因此 hash 在 dev/build 下一致）；
+        - 第二个 hash 是 @vitejs/plugin-react 仅在 dev 注入的 Fast Refresh preamble。
+          升级 plugin-react 后若 dev 控制台报「can't detect preamble」，按 DevTools 的 CSP 提示
+          重新计算该 hash（内容见 node_modules/@vitejs/plugin-react/dist/index.js 的 preambleCode）。
+      style-src 保留 'unsafe-inline'：React 组件的 style 属性依赖内联样式，不能删。
+      connect-src 只放行 self 与本地 dev server 的 HMR WebSocket；生产构建不需要任何外部源。
+      object-src/base-uri 一并锁死，避免注入 <object>/<base> 绕过脚本策略。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'sha256-m5cKvid1MKIYY6KlMn4hAuziCbjxKGql8r/f+e4i86s=' 'sha256-Z2/iFzh9VMlVkEOar1f/oSHWwQk3ve1qk/C2WdsC4Xk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'none'"
+    />
+    <!-- 首帧前写 data-theme：必须在样式表之前同步执行，否则会白闪（见 ARCHITECTURE §7.8） -->
+    <script>
+      ;(function () {
+        try {
+          var dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      })()
+    </script>
+    <title>RDPilot</title>
+    <!-- 骨架期的最小 reset（完整的设计系统样式在 T11 的 index.css / tokens.css 中接管） -->
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: #14161c;
+        color: #e8eaf0;
+        font-family: 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+      }
+      html[data-theme='light'] body {
+        background: #f5f7fb;
+        color: #1a1d26;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

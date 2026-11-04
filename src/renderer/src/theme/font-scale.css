@@ -1,0 +1,612 @@
+/* ==========================================================================
+   Batch 8 · 字号缩放对"布局尺度"的连带缩放
+
+   背景：a11y/tokens.css 把 --font-* 改成 `calc(<px> * var(--font-scale))`，
+   固定高度必须跟着放大，否则 13px → 16.25px（125%）时字顶到边框。
+
+   选择器口径：
+    - `:root` 给基准档；
+    - `html[data-ui-density='…']` 逐档覆盖（特异性 0,1,1 > :root 的 0,1,0）。
+   ========================================================================== */
+
+:root {
+  --fs: var(--font-scale, 1);
+  --control-h: calc(32px * var(--fs));
+  --control-h-sm: calc(28px * var(--fs));
+  --setting-row-min-h: calc(44px * var(--fs));
+  --setting-row-py: calc(6px * var(--fs));
+  --nav-row-h: calc(34px * var(--fs));
+}
+
+html[data-ui-density='compact'] {
+  --control-h: calc(28px * var(--fs));
+  --control-h-sm: calc(26px * var(--fs));
+  --setting-row-min-h: calc(38px * var(--fs));
+  --setting-row-py: calc(4px * var(--fs));
+  --nav-row-h: calc(30px * var(--fs));
+}
+
+html[data-ui-density='comfortable'] {
+  --control-h: calc(32px * var(--fs));
+  --control-h-sm: calc(28px * var(--fs));
+  --setting-row-min-h: calc(44px * var(--fs));
+  --setting-row-py: calc(6px * var(--fs));
+  --nav-row-h: calc(34px * var(--fs));
+}
+
+html[data-ui-density='spacious'] {
+  --control-h: calc(34px * var(--fs));
+  --control-h-sm: calc(30px * var(--fs));
+  --setting-row-min-h: calc(48px * var(--fs));
+  --setting-row-py: calc(9px * var(--fs));
+  --nav-row-h: calc(38px * var(--fs));
+}
+
+:root {
+  --segment-min-h: calc(46px * var(--fs));
+  --col-row-min-h: calc(36px * var(--fs));
+}
+
+/* ==========================================================================
+   下拉框（R26）
+
+   文字必须落在「左边缘 → 箭头左缘」这段的正中，上下也正中。
+   做法：原生 select 的文字透明（保留语义与键盘），可见值是一层绝对定位的
+   flex 容器：inset 0 + align-items:center 保证垂直居中（不再靠 line-height
+   与控件高度两条线对齐，差 1px 就是用户看到的"没居中"）；
+   左右 padding 取 4 / 18：内容盒 [4, W-18] 的中心 = (W-14)/2，
+   正好是「左边缘 0 到箭头左缘 W-14」的中点。
+   ========================================================================== */
+.rp-select-native {
+  padding: 0;
+}
+
+.rp-select-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: calc(4px * var(--fs));
+  padding-right: calc(18px * var(--fs));
+  pointer-events: none;
+  color: var(--text-1);
+}
+
+.rp-select-value-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /*
+   * 行高收到 1.25：行盒仍比字号高，西文下伸笔画不会被 overflow:hidden 裁掉，
+   * 而半行距上下对称，墨迹中心与行盒中心重合 —— 垂直居中只由 flex 决定。
+   */
+  line-height: 1.25;
+}
+
+.rp-select-chevron {
+  right: calc(2px * var(--fs));
+  width: calc(12px * var(--fs));
+  height: calc(12px * var(--fs));
+}
+
+/* 内容自适应输入框：宽度跟着内容走（Chromium 123+ 支持 field-sizing） */
+input[data-fit='true'] {
+  field-sizing: content;
+  min-width: calc(6.5rem * var(--fs));
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   设置页行（R26 重写）
+
+   结构只有一种：
+     .rp-setting-row
+       .rp-setting-head   标签 + ?/重置 + 右侧控件（同一行，垂直居中）
+       .rp-setting-hint   说明（整格宽，1–2 行）
+       .rp-setting-explain 展开的长说明
+
+   控件在详情行（R29）：标题行只放标签与它的 ?/重置，说明与控件共用一条中线。
+   ========================================================================== */
+.rp-setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: calc(3px * var(--fs));
+  min-width: 0;
+  min-height: var(--setting-row-min-h);
+  padding: calc(7px * var(--fs)) calc(14px * var(--fs)) calc(8px * var(--fs));
+  /* 用 inset 阴影画分隔线：最后一横带的线正好压在卡片下边框上，
+     不会出现"最后一排有的格子有下划线、有的没有" */
+  box-shadow: inset 0 -1px 0 var(--divider);
+  transition: background-color var(--dur-fast) ease-std;
+  overflow-wrap: anywhere;
+}
+
+.rp-setting-row:hover {
+  background: var(--row-hover);
+}
+
+/**
+ * 标题行 + 详情行（R29）。
+ *
+ *   .rp-setting-row
+ *   ├─ .rp-setting-head   标签 + ?/重置（紧贴标签；右半边留空）
+ *   └─ .rp-setting-body   说明（左，1–2 行） + 控件槽（右，与说明同中线）
+ *
+ * 用户口径：「所有下拉和开关等控件对齐要到详情，不是标题」「? 和重置控件要紧贴标题」。
+ * R26 把控件放回标题行后，`?` 只能被夹在标签与控件之间，说明行右半边永远空着。
+ *
+ * 标题行高度恒为 --control-h：标签折 2 行时控件位置不动（R11 的整行 flex 会让
+ * 控件中线随标签折行漂 18–36px，那是「各对各的」的来源）。
+ */
+.rp-setting-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(6px * var(--fs));
+  row-gap: calc(4px * var(--fs));
+  min-width: 0;
+  /* 标题行只放标签与 24px 的帮助/重置，不再按控件高（32）撑高整行 */
+  min-height: calc(24px * var(--fs));
+}
+
+.rp-setting-label {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  /*
+   * 不再设 6em/9em 下限：标题行只剩「标签 + ?」，宽度足够；
+   * 下限会让短标签的 ? 离文字 50px，正好违背「? 要紧贴标题」。
+   */
+  min-width: 0;
+  line-height: 1.45;
+  text-wrap: pretty;
+  word-break: auto-phrase;
+}
+
+/*
+ * 详情行：说明在左、控件在右，**控件在本行的垂直中线上**（R30）。
+ *
+ * R29 把控件锚在「说明第一行」上；说明折成 2 行时，控件看着贴在本行顶部，
+ * 用户原话「开关等控件要详情水平居中对齐，现在的是顶端对齐」。
+ * 现在 align-items: center：说明 1 行时控件与文字同中线，说明 2 行时控件
+ * 落在两行之间——两种情况都读作「对着这段说明居中」。
+ *
+ * 关键：详情行自己 flex: 1 撑满行剩余高度。同一横带的两格行高相等（网格
+ * stretch），撑满后两侧的中线落在同一个 y 上，不会因为一边说明多一行就错位。
+ */
+.rp-setting-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(8px * var(--fs));
+  row-gap: calc(6px * var(--fs));
+  min-width: 0;
+  min-height: var(--control-h);
+}
+
+/* 上下两行的复合组（延迟阈值）：顶对齐，控件对齐说明第一行 */
+.rp-setting-body[data-body-align='start'] {
+  align-items: flex-start;
+}
+
+/*
+ * 说明：横向占满剩余宽度；**纵向不占 flex-basis**。
+ *
+ * R29 写成 `flex: 1 1 8rem`，它在横向详情行里是"宽度基准"，但同一套样式
+ * 也被分段控件行（`.rp-setting-row` 是 column flex）复用 —— 在纵向容器里
+ * 8rem 变成**高度**，1 行说明被撑成 128px，行内出现一大片空白。
+ * 用户点名的「矩阵窗口密度 / 减少动效 / 界面字号 … 下面有很大空白」就是这个。
+ * 现在基础样式不设 basis，只在横向详情行里补宽度。
+ */
+.rp-setting-hint {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.55;
+  text-wrap: pretty;
+  word-break: auto-phrase;
+}
+
+.rp-setting-body > .rp-setting-hint {
+  flex: 1 1 8rem;
+}
+
+/*
+ * 单行行的说明（R30）：夹在标签与动作按钮之间，占剩余宽度，溢出省略。
+ * 典型用法「数据目录  C:\Users\…\RDPilot  复制 打开」——一行读完，不折行。
+ */
+.rp-setting-hint--inline {
+  flex: 1 1 6rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.rp-setting-slot {
+  margin-left: auto;
+  display: flex;
+  flex: none;
+  min-width: 0;
+  min-height: var(--control-h);
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(8px * var(--fs));
+}
+
+/*
+ * 控件槽宽度：由分节栅格写入 --slot-w（本节所有下拉/输入框共用一个值）。
+ *  - select / input：固定为 --slot-w，同列右缘因此是一条竖线；
+ *  - switch：轨道宽度；
+ *  - value：只读值按内容，长版本号可折行；
+ *  - group：一组控件（下拉+输入+应用）按自然宽，放不下时整行。
+ */
+.rp-setting-slot[data-slot-kind='select'],
+.rp-setting-slot[data-slot-kind='input'] {
+  width: var(--slot-w, max-content);
+}
+
+.rp-setting-slot[data-slot-kind='select'] > *,
+.rp-setting-slot[data-slot-kind='input'] > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.rp-setting-slot[data-slot-kind='switch'] {
+  width: calc(2.75rem * var(--fs));
+}
+
+.rp-setting-slot[data-slot-kind='value'] {
+  max-width: 100%;
+  text-align: right;
+}
+
+.rp-setting-slot[data-slot-kind='value'] > * {
+  max-width: 100%;
+}
+
+.rp-setting-slot--tall {
+  white-space: normal;
+}
+
+.rp-setting-slot[data-slot-kind='group'] {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.rp-setting-slot[data-slot-kind='group'] > * {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/*
+ * 组里的下拉：max-content 只按**当前选项**算，长选项（「选择模板」）会被截断成
+ * 「选…」。行上的 --slot-w 由最长选项文字算出（见 controls.tsx 的 group 分支）；
+ * 这里把宽度落到下拉本身（而不是外层包装），带「标签 + 下拉」的组也不会被压。
+ */
+.rp-setting-slot[data-slot-kind='group'] .rp-select {
+  width: var(--slot-w, max-content);
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+   分节栅格（R26）
+
+   列数由 controls.tsx 的 useSectionGrid 按容器宽度算（25rem × 字号），
+   写在 data-cols 上；跨度写在每一行的 inline grid-column 上。
+   ========================================================================== */
+[data-settings-body='true'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: stretch;
+  column-gap: 0;
+}
+
+[data-settings-body='true'][data-cols='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+[data-settings-body='true'][data-cols='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+[data-settings-body='true'][data-cols='4'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/*
+ * 行组包装层透明化：行直接成为分节网格项，列宽因此全节统一。
+ * 只摊平"直属子元素全是行"的包装；块级栅格（rp-pair-grid / rp-action-grid）
+ * 是真实的两/三列块，不能摊平。
+ */
+[data-settings-body='true'] .rp-row-grid,
+[data-settings-body='true']
+  > div:has(> [data-setting-row='true']):not(.rp-pair-grid):not(.rp-action-grid),
+[data-settings-body='true']
+  div:has(> [data-setting-row='true']):not(:has(> :not([data-setting-row='true']))):not(
+    .rp-pair-grid
+  ):not(.rp-action-grid) {
+  display: contents;
+}
+
+/* 块级内容（表格、危险区、分段控件、卡片栅格）横跨整行 */
+[data-settings-body='true'] > :not([data-setting-row='true']),
+[data-settings-body='true'] [data-setting-span='full'] {
+  grid-column: 1 / -1;
+}
+
+/*
+ * 块级内容与行共用同一条左右内缩：行自己带 14px 内边距，块级内容由这里补上，
+ * 否则主题卡/表格/危险区会贴着卡片描边（用户口径「不要贴边」）。
+ */
+[data-settings-body='true']
+  > :not([data-setting-row='true']):not(:has(> [data-setting-row='true'])),
+[data-settings-body='true']
+  > div:has(> [data-setting-row='true'])
+  > :not([data-setting-row='true']):not(:has(> [data-setting-row='true'])) {
+  padding-left: calc(14px * var(--fs));
+  padding-right: calc(14px * var(--fs));
+}
+
+/*
+ * 容器查询的容器必须挂在 section 上：CSS 只允许后代查询容器，
+ * 把 container-type 写在 body 上再查询 body 本身永远不匹配。
+ * .rp-pair-grid / .rp-action-grid / .rp-cred-matrix-grid 都按它切列。
+ */
+section[id^='settings-'] {
+  container-type: inline-size;
+}
+
+/* ==========================================================================
+   分节内部的固定小块栅格（与分节列数无关，只看自己的容器宽度）
+
+   用 flex-wrap + `flex: 1 1 <最小宽>` 而不是 grid：
+   同一行的格子等宽，最后一行若只剩一项会自动拉伸铺满整行 ——
+   3 条短动作在 1024 窗排一行、在 900 窗排成 2+1（第三项独占整行），
+   右侧永远不会留半格空白，也不需要按列数写 odd/even 规则。
+   ========================================================================== */
+
+/* 4 项短设置：1 / 2 / 4 列（2 列是常态；4 列只在很宽时才成立）
+   34rem 起才切两列：900 窗内容区 494px 时两列只剩 247，
+   「标签 + ? + 下拉」放不下会把控件挤到第二行，同排两行不同高。 */
+.rp-pair-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 34rem) {
+  .rp-pair-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 76rem) {
+  .rp-pair-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 3 条短动作：每项最小 16rem（窄了标签和按钮会各占一行，同排不同高） */
+.rp-action-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.rp-action-grid > * {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+/* 列表列管理：每项最小 15rem，能放几列放几列 */
+.rp-col-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  column-gap: 2rem;
+  align-content: start;
+}
+
+/*
+ * 执行器四选一：2 列（1024–1500）→ 4 列（≥1500）。
+ * 三列会把 4 张卡切成 3+1；四列在 1030px 宽时每张只剩 200px，
+ * 标题和「可用」徽标会互相挤。
+ */
+.rp-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  /* 2×2 时四张卡等高：行高取最大内容，不让第二行比第一行矮半截 */
+  grid-auto-rows: 1fr;
+}
+
+@container (min-width: 78rem) {
+  .rp-engine-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 30rem) {
+  .rp-engine-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * 卡片外观的「快速方案」：2 列 → 4 列。
+ * 不用 auto-fit：4 张卡在 700–1000px 之间会被切成 3 列（3+1），
+ * 最后一张独占一整行；按容器宽度只在「两列够宽」和「四列够宽」两档切换。
+ */
+.rp-card-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  grid-auto-rows: 1fr;
+}
+
+@container (min-width: 60rem) {
+  .rp-card-presets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 26rem) {
+  .rp-card-presets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 紧凑条目网格（快捷键表等）：--auto-min 由使用处覆盖 */
+.rp-auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--auto-min, 14rem)), 1fr));
+  gap: 2px 8px;
+}
+
+/*
+ * 快捷键全表（R26）：与设置行同一套分隔线语言——列间距 0、条目自带左右 14px
+ * 内边距，分隔线因此跨列连成一条。旧实现用 8px 列间距 + 每条独立下划线，
+ * 三条短横线悬在格子中间，看着像"没对齐"。
+ */
+.rp-shortcut-grid {
+  display: grid;
+  /*
+   * 1 / 2 / 3 / 4 列（容器宽 30rem / 58rem / 84rem）：
+   * 1024 窗两列（每对 ≈296）、1440 三列（≈330）、1920 四列（≈380）。
+   * 旧值 24rem 在 1024 只放得下一列 —— 标签在左、键帽在 600px 外的右缘；
+   * 而 auto-fit + 17rem 在 1920 会排到 6 列，标签被挤成两行、行高不齐。
+   */
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: calc(20px * var(--fs));
+  row-gap: 0;
+  align-items: stretch;
+}
+
+@container (min-width: 30rem) {
+  .rp-shortcut-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 58rem) {
+  .rp-shortcut-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 84rem) {
+  .rp-shortcut-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.rp-shortcut-item {
+  min-width: 0;
+  padding: calc(6px * var(--fs)) calc(14px * var(--fs));
+  border-bottom: 1px solid var(--divider);
+}
+
+/* ==========================================================================
+   健康表（R28）：列按**表格自身宽度**显隐
+
+   1024 窗的视口够宽（Tailwind lg=1024 命中），但设置卡里只剩 590px：
+   7 列摊下来每列 40–90px，"端口拒绝连接（主机在，服务没起）"被折成四五行的
+   窄高文字。改用容器查询，按可用宽度分三档：
+     < 46rem  连接 / 状态 / 延迟 / 证书
+     ≥ 46rem  再加 24h 在线率、连续失败
+     ≥ 58rem  再加 趋势
+   ========================================================================== */
+.rp-health-scroll {
+  container-type: inline-size;
+}
+
+.rp-ht-mid,
+.rp-ht-trend {
+  display: none;
+}
+
+@container (min-width: 46rem) {
+  .rp-ht-mid {
+    display: table-cell;
+  }
+}
+
+@container (min-width: 58rem) {
+  .rp-ht-trend {
+    display: table-cell;
+  }
+}
+
+/*
+ * 分段控件的兜底列数（JS 会在 inline style 里给出精确列数）
+ */
+.rp-segment-rows {
+  min-width: 0;
+}
+
+/* ==========================================================================
+   凭据策略一览：每张卡 22rem 起，1 / 2 / 4 列
+   ========================================================================== */
+.rp-cred-matrix-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 30rem) {
+  .rp-cred-matrix-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 70rem) {
+  .rp-cred-matrix-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ==========================================================================
+   数据统计卡：列数按卡片自身宽度切
+   ========================================================================== */
+.rp-stat-host {
+  container-type: inline-size;
+}
+
+.rp-stat-pairs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 20px;
+}
+
+@container (min-width: 26rem) {
+  .rp-stat-pairs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /*
+   * 奇数条时最后一条（最近备份）横跨整行：11 条排 2 列会剩半格，
+   * 「最近备份 2026/10/30 17:45:45」孤零零占左半边，右边整块空着。
+   */
+  .rp-stat-pairs > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
+   卡片列表字号：只作用于连接卡片网格/列表
+   ========================================================================== */
+.rp-list-font {
+  --list-fs: calc(var(--font-scale, 1) * var(--list-font-scale, 1));
+  --font-caption: calc(11px * var(--list-fs));
+  --font-body-s: calc(12px * var(--list-fs));
+  --font-body: calc(13px * var(--list-fs));
+  --font-body-l: calc(14px * var(--list-fs));
+  --font-title: calc(16px * var(--list-fs));
+  --font-display: calc(20px * var(--list-fs));
+}

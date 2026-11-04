@@ -1,0 +1,517 @@
+{
+  "schemaVersion": 1,
+  "connections": [
+    {
+      "id": "b5-01",
+      "name": "生产-Web-01",
+      "host": "127.0.0.1",
+      "port": 3391,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-prod",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": true,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "web",
+        "核心"
+      ]
+    },
+    {
+      "id": "b5-02",
+      "name": "生产-Web-02",
+      "host": "127.0.0.1",
+      "port": 3392,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-prod",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "web",
+        "核心"
+      ]
+    },
+    {
+      "id": "b5-03",
+      "name": "生产-DB-01",
+      "host": "127.0.0.1",
+      "port": 3393,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-prod",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "db"
+      ]
+    },
+    {
+      "id": "b5-04",
+      "name": "生产-DB-02",
+      "host": "127.0.0.1",
+      "port": 3394,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-prod",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "db"
+      ]
+    },
+    {
+      "id": "b5-05",
+      "name": "测试-跳板",
+      "host": "127.0.0.1",
+      "port": 3395,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-test",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "jump"
+      ]
+    },
+    {
+      "id": "b5-06",
+      "name": "测试-构建",
+      "host": "127.0.0.1",
+      "port": 3396,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-test",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "ci"
+      ]
+    },
+    {
+      "id": "b5-07",
+      "name": "测试-回归",
+      "host": "127.0.0.1",
+      "port": 3397,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-test",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "qa"
+      ]
+    },
+    {
+      "id": "b5-08",
+      "name": "办公-财务",
+      "host": "10.99.0.8",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-office",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "office"
+      ]
+    },
+    {
+      "id": "b5-09",
+      "name": "办公-人事",
+      "host": "10.99.0.9",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-office",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "office"
+      ]
+    },
+    {
+      "id": "b5-10",
+      "name": "办公-前台",
+      "host": "10.99.0.10",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-office",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": [
+        "office"
+      ]
+    },
+    {
+      "id": "b5-11",
+      "name": "分支-上海",
+      "host": "10.70.1.11",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-branch",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "branch"
+      ]
+    },
+    {
+      "id": "b5-12",
+      "name": "分支-广州",
+      "host": "10.70.2.12",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": "grp-branch",
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "prod",
+      "tags": [
+        "branch"
+      ]
+    },
+    {
+      "id": "b5-13",
+      "name": "未分组-临时1",
+      "host": "198.51.100.113",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": null,
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": []
+    },
+    {
+      "id": "b5-14",
+      "name": "未分组-临时2",
+      "host": "198.51.100.114",
+      "port": 3389,
+      "username": "tester",
+      "domain": null,
+      "groupId": null,
+      "note": "",
+      "colorTag": "",
+      "displayMode": "fullscreen",
+      "resolution": {
+        "w": 1280,
+        "h": 800
+      },
+      "colorDepth": 32,
+      "audioMode": "local",
+      "favorite": false,
+      "source": "manual",
+      "os": "windows",
+      "hasCredential": false,
+      "lastConnectedAt": null,
+      "mruRank": null,
+      "connectCount": 0,
+      "createdAt": 1760000000000,
+      "updatedAt": 1760000000000,
+      "environment": "test",
+      "tags": []
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp-prod",
+      "name": "生产环境",
+      "order": 0,
+      "icon": "server",
+      "color": "#e05a4f",
+      "createdAt": 1760000000000
+    },
+    {
+      "id": "grp-test",
+      "name": "测试环境",
+      "order": 1,
+      "icon": "beaker",
+      "color": "#4f8be0",
+      "createdAt": 1760000000000
+    },
+    {
+      "id": "grp-office",
+      "name": "办公机",
+      "order": 2,
+      "icon": "monitor",
+      "color": "#3fa66a",
+      "createdAt": 1760000000000
+    },
+    {
+      "id": "grp-branch",
+      "name": "分支节点",
+      "order": 3,
+      "icon": "network",
+      "color": "#c9a227",
+      "createdAt": 1760000000000
+    }
+  ],
+  "settings": {
+    "theme": "dark",
+    "locale": "zh-CN",
+    "closeBehavior": "tray",
+    "minimizeBehavior": "taskbar",
+    "autoScanHistoryOnStart": false,
+    "connectivityCheck": false,
+    "mstscPath": "C:\\Windows\\System32\\mstsc.exe",
+    "importWizardDismissed": true,
+    "autoGroupOnImport": true,
+    "sidebarCollapsed": false,
+    "layout": "list",
+    "autoDetectHostname": false,
+    "skipCertWarning": false,
+    "notifyOnConnect": false,
+    "notifyOnFailure": false,
+    "autoStart": false,
+    "trayHintShown": true
+  },
+  "deletedKeys": [],
+  "colorMigratedAt": 1760000000000,
+  "meta": {
+    "firstBootAt": 1760000000000,
+    "lastBootAt": 1760000000000,
+    "lastImportAt": null,
+    "titleReadable": null,
+    "titleReadableAt": null
+  },
+  "tags": [
+    {
+      "name": "web",
+      "color": "#4f8be0"
+    },
+    {
+      "name": "db",
+      "color": "#c9a227"
+    },
+    {
+      "name": "核心",
+      "color": "#e05a4f"
+    },
+    {
+      "name": "office",
+      "color": "#3fa66a"
+    }
+  ]
+}

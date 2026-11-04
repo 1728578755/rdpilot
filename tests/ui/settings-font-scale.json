@@ -1,0 +1,53 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "click": {
+        "text": "设置",
+        "exact": true
+      }
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "eval": "(() => { const dlg = document.querySelector('[role=\"dialog\"]'); if (dlg) { const btn = [...dlg.querySelectorAll('button')].find((b) => ['稍后','Later'].includes((b.textContent||'').trim())); if (btn) btn.click(); } const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-appearance\"]'); if (nav) nav.click(); const root = document.querySelector('[data-scroll-root=\"true\"]'); if (root) root.scrollTop = 0; return { dialog: Boolean(dlg), section: Boolean(document.getElementById('settings-appearance')) }; })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const probe = () => { const sel = document.querySelector('#settings-appearance select'); const box = sel ? sel.parentElement : null; const hint = document.querySelector('#settings-appearance [data-setting-hint=\"true\"]'); const label = document.querySelector('#settings-appearance [data-setting-label=\"true\"]'); const root = document.querySelector('[data-scroll-root=\"true\"]'); return { scale: getComputedStyle(document.documentElement).getPropertyValue('--font-scale').trim(), docFont: parseFloat(getComputedStyle(document.documentElement).fontSize), bodyFont: parseFloat(getComputedStyle(document.body).fontSize), controlH: box ? Math.round(box.getBoundingClientRect().height) : null, hintFont: hint ? parseFloat(getComputedStyle(hint).fontSize) : null, labelFont: label ? parseFloat(getComputedStyle(label).fontSize) : null, controlHVar: getComputedStyle(document.documentElement).getPropertyValue('--control-h').trim(), rowMinH: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--setting-row-min-h')), overflowX: root ? root.scrollWidth - root.clientWidth : null }; }; const base = probe(); if (base.scale !== '1') throw new Error('默认字号不是 100%: ' + base.scale); if (Math.abs(base.docFont - 16) > 0.1) throw new Error('默认根字号不是 16px: ' + base.docFont); if (Math.abs(base.controlH - 32) > 1) throw new Error('默认控件高度不是 32px: ' + base.controlH); return base; })()"
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); if (!sel) throw new Error('外观分节缺少字号下拉'); const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set; setter.call(sel, '125'); sel.dispatchEvent(new Event('change', { bubbles: true })); return sel.value; })()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); const box = sel.parentElement; const hint = document.querySelector('#settings-appearance [data-setting-hint=\"true\"]'); const label = document.querySelector('#settings-appearance [data-setting-label=\"true\"]'); const root = document.querySelector('[data-scroll-root=\"true\"]'); const content = document.querySelector('[data-settings-content=\"true\"]'); const cr = content.getBoundingClientRect(); const scale = getComputedStyle(document.documentElement).getPropertyValue('--font-scale').trim(); const docFont = parseFloat(getComputedStyle(document.documentElement).fontSize); const controlH = Math.round(box.getBoundingClientRect().height); const hintFont = parseFloat(getComputedStyle(hint).fontSize); const labelFont = parseFloat(getComputedStyle(label).fontSize); if (scale !== '1.25') throw new Error('字号没有切到 125%: ' + scale); if (Math.abs(docFont - 20) > 0.1) throw new Error('125% 下根字号不是 20px: ' + docFont); if (Math.abs(controlH - 40) > 1) throw new Error('125% 下控件高度没有同比放大到 40px: ' + controlH); if (Math.abs(labelFont - 16.25) > 0.2) throw new Error('125% 下标签字号不是 16.25px: ' + labelFont); if (Math.abs(hintFont - 15) > 0.2) throw new Error('125% 下说明字号不是 15px: ' + hintFont); if (root && root.scrollWidth > root.clientWidth + 1) throw new Error('125% 下出现横向滚动: ' + root.scrollWidth + '>' + root.clientWidth); const overflow = [...content.querySelectorAll('*')].filter((el) => { const r = el.getBoundingClientRect(); if (r.width === 0) return false; if (!(r.right > cr.right + 1 || r.left < cr.left - 1)) return false; let node = el.parentElement; while (node && node !== content) { const cs = getComputedStyle(node); if (/auto|scroll|hidden/.test(cs.overflowX)) return false; node = node.parentElement; } return true; }); if (overflow.length > 0) throw new Error('125% 下有元素溢出内容列: ' + overflow.length + ' 个'); const clipped = [...content.querySelectorAll('[data-setting-label=\"true\"]')].filter((el) => el.scrollWidth > el.clientWidth + 1); if (clipped.length > 0) throw new Error('125% 下标签被截断: ' + clipped.length + ' 个'); return { scale, docFont, controlH, labelFont, hintFont, overflowX: root ? root.scrollWidth - root.clientWidth : null, contentWidth: Math.round(cr.width) }; })()"
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set; setter.call(sel, '100'); sel.dispatchEvent(new Event('change', { bubbles: true })); return sel.value; })()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); const box = sel.parentElement; const scale = getComputedStyle(document.documentElement).getPropertyValue('--font-scale').trim(); const docFont = parseFloat(getComputedStyle(document.documentElement).fontSize); const controlH = Math.round(box.getBoundingClientRect().height); if (scale !== '1') throw new Error('切回 100% 后 --font-scale 没有恢复: ' + scale); if (Math.abs(docFont - 16) > 0.1) throw new Error('切回后根字号不是 16px: ' + docFont); if (Math.abs(controlH - 32) > 1) throw new Error('切回后控件高度没有恢复 32px: ' + controlH); const saved = JSON.parse(localStorage.getItem('rdpilot.a11y.prefs.v1') || '{}'); if (saved.fontScale !== 100) throw new Error('字号偏好没有落盘: ' + JSON.stringify(saved.fontScale)); return { scale, docFont, controlH, saved: saved.fontScale }; })()"
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set; setter.call(sel, '125'); sel.dispatchEvent(new Event('change', { bubbles: true })); return 'ok'; })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const root = document.querySelector('[data-scroll-root=\"true\"]'); const content = document.querySelector('[data-settings-content=\"true\"]'); const cr = content.getBoundingClientRect(); const rows = [...document.querySelectorAll('[data-settings-content=\"true\"] [data-setting-row]')]; const heights = rows.map((r) => Math.round(r.getBoundingClientRect().height)); const minRow = Math.min(...heights); if (minRow < 55) throw new Error('125% 下设置行没有同比变高，最小行高 ' + minRow); const groups = new Map(); for (const el of document.querySelectorAll('[data-settings-content=\"true\"] [data-setting-slot=\"true\"]')) { const row = el.closest('[data-setting-row]'); const rr = row ? row.getBoundingClientRect() : null; const key = rr ? Math.round(rr.left) + '/' + Math.round(rr.right) : '0'; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(Math.round(el.getBoundingClientRect().right)); } let spread = 0; for (const rights of groups.values()) { if (rights.length > 1) spread = Math.max(spread, Math.max(...rights) - Math.min(...rights)); } if (spread > 1) throw new Error('125% 下同列控件右缘不齐: ' + spread + 'px'); if (root.scrollWidth > root.clientWidth + 1) throw new Error('125% 下出现横向滚动: ' + root.scrollWidth + '>' + root.clientWidth); return { rows: rows.length, minRow, spread, columns: groups.size, contentWidth: Math.round(cr.width), overflowX: root.scrollWidth - root.clientWidth }; })()"
+    },
+    {
+      "eval": "(() => { const sel = document.querySelector('#settings-appearance select'); const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set; setter.call(sel, '100'); sel.dispatchEvent(new Event('change', { bubbles: true })); return 'restored'; })()"
+    }
+  ]
+}

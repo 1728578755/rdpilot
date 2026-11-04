@@ -1,0 +1,106 @@
+# RDPilot 打包配置
+#
+# 产物（npm run build:win → release/）：
+#   RDPilot-<version>-x64-setup.exe        NSIS 安装包
+#   RDPilot-<version>-x64-portable.exe     便携版单文件
+#   RDPilot-<version>-x64-setup.exe.blockmap
+#   SHA256SUMS.txt                         由 scripts/release-checksums.mjs 生成
+#
+# 版本号唯一真相源是 package.json 的 version。
+# 当前未配置代码签名证书，也未接入自动更新：本配置不会上传任何产物。
+
+appId: com.rdpilot.desktop
+# 必须与主进程 app.setAppUserModelId('com.rdpilot.desktop') 一致：
+# Windows 只给 AUMID 与本机快捷方式匹配的进程显示 Toast 通知
+productName: RDPilot
+copyright: Copyright © 2026 RDPilot contributors
+
+directories:
+  output: release
+  buildResources: resources
+
+# 只打包构建产物与必要声明，源码与文档不进包
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+  - '!**/*.ts'
+
+# 图标等静态资源放在 asar 外：主进程通过 app.isPackaged 分支从 process.resourcesPath 读取。
+# win.icon（exe 图标）走 buildResources，不在这个列表里。
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      # 品牌图标：主进程传给 RdpHost.exe 的 --icon、窗口图标兜底
+      - icon.ico
+      - icon.png
+      # 托盘图标
+      - tray.png
+      - tray-16.png
+      - tray-light.png
+      - tray-light-16.png
+      - tray-dark.png
+      - tray-dark-16.png
+      # 内置 RDP 会话宿主（WinForms + mstscax）。必须放在 asar 外：主进程直接 spawn 这个 exe。
+      - RdpHost.exe
+      # RDP 证书名探测（.NET/SChannel）
+      - CertProbe.exe
+      # 随包 FreeRDP 执行器
+      - freerdp/**/*
+
+asar: true
+compression: maximum
+
+# electron-builder 25 没有 win32metadata 选项，以下版本资源由 afterPack 钩子写入：
+#   CompanyName / FileDescription / ProductName / InternalName / OriginalFilename
+# 同时写入 FileVersion / ProductVersion / LegalCopyright 与 exe 图标。
+afterPack: scripts/after-pack-win-metadata.cjs
+
+# `.rdp` 文件关联：双击后由 RDPilot 询问「直连 / 导入 / 取消」。
+# perMachine: false，关联写在 HKCU，卸载时移除；便携版不写注册表，不抢关联。
+fileAssociations:
+  - ext: rdp
+    name: RDPilot Remote Desktop Connection
+    description: Remote Desktop Connection file
+    role: Editor
+
+win:
+  icon: resources/icon.ico
+  executableName: RDPilot
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  # 普通用户权限即可运行
+  requestedExecutionLevel: asInvoker
+  artifactName: ${productName}-${version}-${arch}-${os}.${ext}
+  # 版本资源由 afterPack 统一写入，关闭 builder 的 rcedit 覆盖
+  signAndEditExecutable: false
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  # 不创建桌面快捷方式，保留开始菜单项
+  createDesktopShortcut: false
+  createStartMenuShortcut: true
+  shortcutName: RDPilot
+  # 卸载不删用户数据；清理是显式动作
+  deleteAppDataOnUninstall: false
+  artifactName: ${productName}-${version}-${arch}-setup.${ext}
+  uninstallDisplayName: ${productName} ${version}
+
+portable:
+  artifactName: ${productName}-${version}-${arch}-portable.${ext}
+  # 每次启动解压到固定目录，避免重复解压
+  unpackDirName: RDPilot
+
+# 没有 publish provider，不生成自动更新元数据
+publish: null
+
+# 不生成 MSI
+msi: null

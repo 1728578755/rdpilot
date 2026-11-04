@@ -1,0 +1,464 @@
+/* ==========================================================================
+   设计 Token（PRD §5.3 全量 HEX）—— 两套主题，切换只改 data-theme，不触发重渲染
+
+   结构约定：
+   1. 主题色块（dark = 默认，light = 覆盖）：只放会随主题变化的颜色/阴影/焦点环；
+   2. 中性块（字体/圆角/动效/层级/尺寸）：两主题共用，只定义一次；
+   3. 语义色分「图形色」与「文字色」：圆点/图标可以偏亮，小字号文字必须 ≥4.5:1。
+   ========================================================================== */
+
+/* ============================== 深色（默认） ============================== */
+:root,
+html[data-theme='dark'] {
+  /* 深色主题 */
+  --bg: #14161c;
+  --surface: #1c1f27;
+  --surface-2: #242832;
+  --border: #2c313d;
+  --text-1: #e8eaf0;
+  --text-2: #9ba3b4;
+  /* 次级文字：原 #6b7280 压在 --surface 上只有约 3.4:1，低于 PRD 自定的 4.5:1，
+     而地址、用户名、备注、时间全用它 —— 最该读清的字反而最糊。提到约 5.2:1。 */
+  --text-3: #8b93a7;
+
+  /* 卡片/行/分隔/筛选片。两主题同名，禁止在组件里写死 hex */
+  --surface-3: #232833;
+  --row-hover: #202530;
+  --row-active: #232c45;
+  --divider: #262b36;
+  --chip: #232833;
+  --chip-active: #2a3350;
+  --icon-tile: #2a2520;
+
+  /* 焦点环：必须是不透明色且与相邻底色 ≥3:1（WCAG 1.4.11）。
+     旧的 50% 半透明 primary 压在 --surface 上只有约 1.9:1，键盘用户几乎看不见。 */
+  --focus-ring: #6b8aff;
+
+  /* 语义色（小字号文字用）：在 --surface 上 ≥4.5:1 */
+  --danger-text: #f87171;
+  --success-text: #22c55e;
+  --warning-text: #f59e0b;
+  --star-strong: #fbbf24;
+
+  /*
+    状态色（图形色，不单独承载信息）：
+    在线绿 / 离线黄 / 连接中蓝 / 未知灰。四者在深色面上都 ≥3:1；
+    文字副本另用 --*-text（小字号文字 ≥4.5:1）。
+    离线必须是黄色（用户明确要求），连接中必须是蓝色（与"失败"的红、
+    "未建立"的橙分开），未知用中性灰空心环。
+  */
+  --status-online: #22c55e;
+  /* 离线必须是**明确的黄色**（用户硬性要求，且旧版曾渲染成白色/灰色）：
+     #facc15 在深色面上与 surface 的对比约 8.9:1，黄相 51°，不会被误读成白点。
+     外圈用半透明黑：黄色本身偏亮，描边负责把 6–8px 的小圆点从图标角/卡片底色里"
+     抠"出来，同时不与"在线绿"混淆。 */
+  --status-offline: #facc15;
+  --status-offline-ring: rgba(0, 0, 0, 0.5);
+  /* 离线文字副本：小字号文字必须 ≥4.5:1（图形色 #facc15 在深色面上约 8.9:1，
+     这里直接复用即可；浅色主题要换深一档，见下方 light 块） */
+  --status-offline-text: #facc15;
+  --status-connecting: #5b7cfa;
+  --status-unknown: #8b93a7;
+
+  /* 兼容旧名：StatusDot / 文档仍可引用 --offline */
+  --offline: var(--status-offline);
+  --offline-ring: var(--status-offline-ring);
+
+  /* 禁用态：不用 opacity 硬压（浅色主按钮会糊成一片），改用主题化底色/文字色 */
+  --disabled-bg: #2a2f3a;
+  --disabled-text: #6f7789;
+  --disabled-border: #343a47;
+
+  /* 阴影层级：1 卡片 / 2 悬停 / 3 浮层 */
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.28);
+  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.42), 0 8px 24px rgba(0, 0, 0, 0.32);
+  --elevation-3: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+  --overlay: rgba(8, 10, 14, 0.5);
+
+  /* ---------------------------------------------------------------
+     OS 身份色：暖色系、低饱和，不同系统能区分但不把整屏打散。
+     颜色只用于图标，不参与名称/地址文字色，也不表达在线/离线。
+     --------------------------------------------------------------- */
+  --os-windows: #f09a5a;
+  --os-linux: #e6b45a;
+  --os-macos: #d0a184;
+  --os-network: #c09a76;
+  --os-unknown: #b0a491;
+}
+
+/* ============================== 浅色 ============================== */
+html[data-theme='light'] {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #f0f3fa;
+  --border: #dbe1ec;
+  --text-1: #1a1d26;
+  --text-2: #5b6478;
+  /* 浅色下原 #8a93a6 压白底约 3.1:1，提到约 4.6:1 */
+  --text-3: #6f7889;
+
+  --surface-3: #eef1f8;
+  --row-hover: #f7f9fd;
+  --row-active: #eef3ff;
+  --divider: #eceff6;
+  --chip: #f2f5fb;
+  --chip-active: #e7edff;
+  --icon-tile: #f7f0e8;
+
+  /* 白底上 primary-active #2e4bc9 约 7.1:1，满足 3:1 且比亮蓝更稳 */
+  --focus-ring: #2e4bc9;
+
+  /* 白底/浅灰底上的文字安全色（#c81e1e 5.2:1 起 / #15803d 5.0:1 / #b45309 5.0:1 / #a16207 4.9:1） */
+  --danger-text: #c81e1e;
+  --success-text: #15803d;
+  --warning-text: #b45309;
+  --star-strong: #a16207;
+  /* 浅色主题的离线灯：白卡上必须是**一眼认得的黄色**。
+     旧的 #ca8a04 偏橄榄/棕，实测被用户读成"灰点"；这里用 #e8b100（黄相 45°），
+     靠 1px 深色外圈（rgba(17,22,32,.62)）承担边界对比：
+     圆点与白底的边界由描边提供（描边 vs 白 ≈ 8:1），符合 WCAG 1.4.11 对图形边界的口径。 */
+  --status-online: #16a34a;
+  --status-offline: #e8b100;
+  --status-offline-ring: rgba(17, 22, 32, 0.62);
+  /* 白底上的黄色文字只到 1.8:1，必须换成同色系的深琥珀（#8a6a00 ≈ 5.1:1），
+     它仍然是"黄"，但能被读清——图形用亮黄、文字用深黄是同一套语义的两档。 */
+  --status-offline-text: #8a6a00;
+  --status-connecting: #2e4bc9;
+  --status-unknown: #6f7889;
+
+  --offline: var(--status-offline);
+  --offline-ring: var(--status-offline-ring);
+
+  --disabled-bg: #eef1f8;
+  --disabled-text: #8a93a6;
+  --disabled-border: #e1e6f0;
+
+  --elevation-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 8px rgba(16, 24, 40, 0.05);
+  --elevation-2: 0 4px 12px rgba(16, 24, 40, 0.1), 0 8px 24px rgba(16, 24, 40, 0.08);
+  --elevation-3: 0 8px 32px rgba(16, 24, 40, 0.16);
+
+  --overlay: rgba(24, 32, 48, 0.35);
+
+  /* 浅底上要压深一档才看得见（图形对比度 ≥3:1），仍是同一组暖色 */
+  --os-windows: #c05f28;
+  --os-linux: #a8780f;
+  --os-macos: #a05f3f;
+  --os-network: #8a6648;
+  --os-unknown: #7d7264;
+}
+
+/* ============================ 主题无关 Token ============================ */
+:root {
+  /* 品牌色（两主题一致，只定义一次） */
+  --primary: #4b6ef5;
+  --primary-hover: #3a5be0;
+  --primary-active: #2e4bc9;
+  --primary-30: #4b6ef54d;
+  --primary-08: #4b6ef514;
+  --gradient-brand: linear-gradient(135deg, #5b7cfa 0%, #7c5cf7 100%);
+
+  /* 语义图形色：圆点、图标、边框；两主题一致（文字安全色 --*-text 在主题块里） */
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --star: #fbbf24;
+  --unconnected: #f97316;
+
+  /*
+    危险操作梯度（R5 #519）。三档语义分开，默认态绝不整片红：
+      1) 次级危险（批量条删除、右键菜单删除）：常态中性，hover 才上 8% 红底 + 红字；
+      2) 主危险（确认框的「删除」）：实色 --danger 底 + 白字，hover 加深到 --danger-hover；
+      3) 按下反馈：--danger-active。
+    hover 用加深而不是 brightness-110：亮红在白字上会掉对比度，也会让"点了更亮"违反危险直觉。
+  */
+  --danger-hover: #dc2626;
+  --danger-active: #b91c1c;
+  --danger-08: color-mix(in srgb, var(--danger) 8%, transparent);
+  --danger-12: color-mix(in srgb, var(--danger) 12%, transparent);
+
+  /* ==========================================================================
+     字号阶梯（R6 #601 / #602）—— 唯一来源，组件不再写 text-[11px] / text-[11.5px]
+     6 档，按"这段字在界面里承担什么"划分，不按视觉大小凑数：
+
+       档位             值     用途
+       --font-caption   11px   徽标 / chip / 计数 / 时间戳 / 快捷键提示（补充信息，读不到不影响操作）
+       --font-body-s    12px   次级正文：卡片副行（地址·用户）、工具条按钮、菜单项、表格次要列
+       --font-body      13px   正文默认：列表单元格、输入框、按钮文案、设置行标签
+       --font-body-l    14px   强调正文：卡片名称、对话框标题、抽屉字段主值
+       --font-title     16px   区块标题：设置分节标题、空态标题
+       --font-display   20px   页面级标题：欢迎页 / 关于页大标题
+
+     为什么下限是 11 而不是 10：中文在 12px 以下笔画开始粘连，10/10.5 只能放"两三个字的
+     徽标"。而 10.5 / 11.5 这类半号值在 100%/125% 缩放下会落在半像素上，整行发虚（R6 #602）：
+     11.5 一律并入 12，10.5 / 10 一律并入 11，15 / 14.5 并入 14 或 16，12.5 并入 12。
+     配套工具类（.rp-text-caption … .rp-text-display）在 index.css 里，只读这些变量。
+     ========================================================================== */
+  --font-caption: 11px;
+  --font-body-s: 12px;
+  --font-body: 13px;
+  --font-body-l: 14px;
+  --font-title: 16px;
+  --font-display: 20px;
+
+  /* 字号 → 行高配对（行内单行场景用，避免每个组件各写 leading-[13px]） */
+  --leading-caption: 14px;
+  --leading-body-s: 16px;
+  --leading-body: 18px;
+  --leading-body-l: 20px;
+  --leading-title: 22px;
+  --leading-display: 28px;
+
+  /* ==========================================================================
+     图标尺寸（R6 #605 / R5 #507）—— 5 档，与字号档一一搭配
+       --icon-inline   12px  跟 --font-caption / --font-body-s 走：菜单项、chip、状态行内图标
+       --icon-control  16px  跟 --font-body 走：工具栏按钮、输入框前缀、操作按钮（默认档）
+       --icon-feature  20px  跟 --font-body-l 走：卡片动作、区块标题前缀
+       --icon-hero     24px  跟 --font-title 走：空态插图、设置分节图标
+       --icon-empty    36px  空态主图形（与 36px 图标块同尺寸）
+     图标网格一律 24 viewBox + 1.6 描边（--icon-stroke），缩放靠 size，不靠改描边：
+     12px 用 1.6 已经偏粗但仍可辨；36px 若需更轻必须显式传 Icon 的 strokeWidth 参数并写理由。
+     ========================================================================== */
+  --icon-inline: 12px;
+  --icon-control: 16px;
+  --icon-feature: 20px;
+  --icon-hero: 24px;
+  --icon-empty: 36px;
+  --icon-stroke: 1.6;
+
+  /* ==========================================================================
+     响应式断点（R6 #608）—— 4 档，TS 侧唯一来源是 theme/breakpoints.ts
+       sm  720px  窄窗：工具栏换两行、卡片网格 ≤2 列、批量条只留图标
+       md  960px  中窗：工具栏回到单行（index.css 的 --toolbar-h 断点同值）
+       lg 1200px  宽窗：工具栏完整文案档（排序用原生 select 显示全称）
+       xl 1440px  宽屏：grid-4 必须真正排出 4 列
+     CSS 媒体查询不能读变量，这里只是登记表；实际数值必须与 breakpoints.ts 一致，
+     scripts/verify-visual-tokens.mjs 会核对两边没有漂移。
+     ========================================================================== */
+
+  /* ==========================================================================
+     圆角阶梯（R6 #603）
+     控件三档 —— 按控件自身高度分，不按"看着圆不圆"：
+       --radius-sm   4px  行内小块：chip、徽标、行内输入框、2px 指示条、色块
+       --radius-md   6px  小控件：≤28px 的图标按钮、菜单项、勾选项、分段按钮
+       --radius-lg   8px  标准控件：按钮、输入框、下拉、工具栏按钮（--radius-btn / --radius-input）
+     容器两档 —— 容器允许比控件圆一档，否则大面板看起来"切角"：
+       --radius-card   12px  卡片
+       --radius-modal  16px  对话框 / 抽屉 / 浮出工具条
+       --radius-pill  999px  胶囊：数量徽标、标签 chip、分段容器
+     禁止任意值：组件里不许出现 rounded-[3px] / [5px] / [9px]。就近归档：
+       2/3/4/5 → sm，6/7 → md，8/9/10 → lg。图标块（36px）走 lg：
+       用 10px 会和卡片 12px 抢"谁更圆"，8px 才和容器拉开层级。
+     ========================================================================== */
+
+  --font-sans: 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* 行高阶梯：与字号解耦，密度只改行高/间距，不改字重与字号 */
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  /* 圆角阶梯：sm 4 / md 6 / lg 8（控件三档）+ card 12 / modal 16（容器两档）+ pill */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+  --radius-pill: 999px;
+  /* 旧名保留为别名：组件与 Tailwind 配置仍在用，改一处即可全局生效 */
+  --radius-btn: var(--radius-lg);
+  --radius-input: var(--radius-lg);
+  --radius-icon: var(--radius-lg);
+  /* --radius-xl 曾是独立的 10px 档，与 lg(8) 差 2px 却各被引用了若干处：
+     收进 lg，保留变量名只为不打断旧调用点（R6 #603）。 */
+  --radius-xl: var(--radius-lg);
+
+  /* 动效：三档时长 + 三条标准曲线 */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  /* 旧名别名 */
+  --dur-std: var(--dur-base);
+  --ease-std: var(--ease-standard);
+
+  /* 层级阶梯：浮层/菜单/通知/提示逐级抬高。
+     Tooltip 必须高于 Toast，否则悬停在提示条附近时 tooltip 会被裁在下面。 */
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-topbar: 130;
+  --z-popover: 140;
+  --z-overlay: 200;
+  --z-menu: 250;
+  --z-toast: 300;
+  --z-tooltip: 400;
+
+  /* 阴影阶梯：只有三档（R6 #604），组件里禁止再写 shadow-[0_1px_2px_rgba(...)]：
+       --elevation-1  卡片、主按钮（贴地一档，几乎看不出方向，只"抬起一点点"）
+       --elevation-2  悬停态、下拉菜单、批量条
+       --elevation-3  对话框、抽屉、浮层
+     值在下方主题块里给（深色靠更大透明度、浅色靠更低透明度），这里只登记用法。 */
+
+  /* 阴影别名：层级值由主题块给出 */
+  --shadow-card: var(--elevation-1);
+  --shadow-card-hover: var(--elevation-2);
+  --shadow-pop: var(--elevation-3);
+
+  /* 派生色：运行时按当前主题的 --surface-2 / --border / --text-3 计算 */
+  --surface-hover: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+  --border-strong: color-mix(in srgb, var(--border) 60%, var(--text-3));
+
+  /* ==========================================================================
+     布局尺度（窗口默认 900×620，最小 900×620）
+     侧栏 180：900 宽下内容区约 670，网格三列自动降两列
+     折叠侧栏 56：只留 32px 图标按钮，仍可点
+     顶栏 40：品牌/面包屑/搜索/布局分段/新建/窗口按钮一行；排序与筛选在列表工具栏
+     ========================================================================== */
+  --topbar-h: 40px;
+  --sidebar-w: 180px;
+  --sidebar-w-collapsed: 56px;
+  --toolbar-h: 44px;
+  --row-h: 44px;
+  --card-h: 64px;
+
+  /* 密度相关尺度（下面 [data-ui-density] 按档覆盖，组件只读变量） */
+  --nav-row-h: 34px;
+  --setting-row-min-h: 44px;
+  --setting-row-py: 8px;
+  --control-h: 32px;
+  --control-h-sm: 28px;
+  --card-pad-left: 12px;
+  --card-pad-right: 10px;
+  --card-gap: 10px;
+  --section-gap: 16px;
+}
+
+/* ==========================================================================
+   界面密度（三档，运行时写到 <html data-ui-density>）
+   只改行高/内边距/控件高度，不改字号：11px 已经是最小可读档，
+   密度再紧也不把字缩到 10px 以下（R5 #474 / R6 #779 的共同底线）。
+   ========================================================================== */
+html[data-ui-density='compact'] {
+  --row-h: 36px;
+  --nav-row-h: 30px;
+  --setting-row-min-h: 38px;
+  --setting-row-py: 5px;
+  --control-h: 28px;
+  --control-h-sm: 26px;
+  --card-pad-left: 8px;
+  --card-pad-right: 8px;
+  --card-gap: 8px;
+  --section-gap: 12px;
+}
+
+html[data-ui-density='comfortable'] {
+  --row-h: 44px;
+  --nav-row-h: 34px;
+  --setting-row-min-h: 44px;
+  --setting-row-py: 8px;
+  --control-h: 32px;
+  --control-h-sm: 28px;
+  --card-pad-left: 12px;
+  --card-pad-right: 10px;
+  --card-gap: 10px;
+  --section-gap: 16px;
+}
+
+html[data-ui-density='spacious'] {
+  --row-h: 52px;
+  --nav-row-h: 38px;
+  --setting-row-min-h: 50px;
+  --setting-row-py: 11px;
+  --control-h: 34px;
+  --control-h-sm: 30px;
+  --card-pad-left: 18px;
+  --card-pad-right: 16px;
+  --card-gap: 14px;
+  --section-gap: 20px;
+}
+
+/* ==========================================================================
+   组件圆角（运行时写到 <html data-radius>）
+   只覆盖阶梯值；组件引用的是 --radius-btn / --radius-input / --radius-icon
+   这些别名，所以改这一处即全局生效，不需要逐个组件改类名。
+   ========================================================================== */
+html[data-radius='soft'] {
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-card: 16px;
+  --radius-modal: 20px;
+  --radius-pill: 999px;
+  /* xl / btn / input / icon 都是 lg 的别名，这里不再各自写一份，否则会漂移成四种圆角 */
+}
+
+html[data-radius='square'] {
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-card: 6px;
+  --radius-modal: 8px;
+  --radius-pill: 6px;
+}
+
+/* ==========================================================================
+   高对比度回退（具体开关由 H 负责；这里保证变量可被覆盖）
+   - prefers-contrast: more 自动生效；
+   - html[data-contrast='high'] 可由设置开关显式打开。
+   ========================================================================== */
+@media (prefers-contrast: more) {
+  :root,
+  html[data-theme='dark'] {
+    --text-2: #c3cad8;
+    --text-3: #aeb6c6;
+    --border: #4a5162;
+    --divider: #3a4150;
+    --focus-ring: #9db2ff;
+    --status-unknown: #b9c1d0;
+  }
+  html[data-theme='light'] {
+    --text-2: #3f4759;
+    --text-3: #4f5768;
+    --border: #b6bfd0;
+    --divider: #c6cedc;
+    --focus-ring: #1f3aa8;
+    --status-unknown: #4f5768;
+  }
+}
+
+html[data-contrast='high'] {
+  --text-2: var(--text-1);
+  --text-3: var(--text-2);
+  --focus-ring: var(--primary-active);
+}
+
+html[data-contrast='high'][data-theme='dark'] {
+  --text-2: #d7dce6;
+  --text-3: #c3cad8;
+  --border: #5b6475;
+  --divider: #49505f;
+  --focus-ring: #a9bbff;
+  --status-unknown: #c8d0dd;
+}
+
+html[data-contrast='high'][data-theme='light'] {
+  --text-2: #333b4c;
+  --text-3: #414a5c;
+  --border: #a7b0c2;
+  --divider: #bcc4d4;
+  --focus-ring: #1c359e;
+  --status-unknown: #414a5c;
+}
+
+/* 强制颜色模式（Windows 高对比主题）：只保留结构与描边，颜色交给系统 */
+@media (forced-colors: active) {
+  :root {
+    --focus-ring: Highlight;
+    --border: CanvasText;
+    --divider: GrayText;
+  }
+}

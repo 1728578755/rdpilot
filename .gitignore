@@ -1,0 +1,27 @@
+# 依赖
+node_modules/
+
+# 构建产物
+out/
+dist/
+release/
+release-build*/
+.tmp/
+
+# 本地原生组件产物（npm run build:native 生成）
+resources/RdpHost.exe
+resources/CertProbe.exe
+
+# electron-vite 生成的本机配置缓存
+electron.vite.config.*.mjs
+
+# 日志与系统文件
+*.log
+.DS_Store
+Thumbs.db
+*.local
+
+# 本地数据与截图
+.screenshots/
+.audit/
+data.corrupt.*.json

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "connections.schema.json",
+  "title": "RDPilot exchange document",
+  "description": "RDPilot 的「交换 JSON」：只含连接与分组，供人接手或第三方消费。不含任何密码、密文、凭据引用与设置。生成端：src/main/import/exportService.ts（buildExchangePayload）。注意：交换文档当前是**单向导出**——RDPilot 不能导入这个文件（导入走备份 JSON / .rdp / .rdg / CSV）。未知字段必须被忽略（向前兼容）。",
+  "type": "object",
+  "required": ["app", "kind", "exchangeVersion", "appVersion", "exportedAt", "counts", "connections", "groups"],
+  "additionalProperties": true,
+  "properties": {
+    "app": {
+      "const": "RDPilot",
+      "description": "固定值，用于快速识别文件来源"
+    },
+    "kind": {
+      "const": "exchange",
+      "description": "文件语义。exchange = 交换文档（本 schema 描述的形状）；backup = 完整备份（含设置，用 schemaVersion，形状不同，见 docs/schema/README.md）"
+    },
+    "exchangeVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "**交换格式**的版本（当前为 1）。刻意不叫 schemaVersion：那是 data.json / 备份 JSON 的内部数据版本，两套命名空间互不影响。消费方遇到比自己支持更高的版本应拒绝解析，而不是猜字段"
+    },
+    "appVersion": {
+      "type": "string",
+      "description": "导出时的应用版本（人看，不参与兼容判断）"
+    },
+    "exportedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "导出时刻，Unix 毫秒时间戳"
+    },
+    "counts": {
+      "type": "object",
+      "required": ["connections", "groups"],
+      "additionalProperties": true,
+      "properties": {
+        "connections": { "type": "integer", "minimum": 0 },
+        "groups": { "type": "integer", "minimum": 0 }
+      },
+      "description": "条目数摘要：不解析全文件也能看出内容规模"
+    },
+    "connections": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/connection" }
+    },
+    "groups": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/group" },
+      "description": "只包含被导出连接实际用到的分组"
+    }
+  },
+  "definitions": {
+    "connection": {
+      "type": "object",
+      "required": ["name", "host", "port", "username", "domain", "groupName", "note", "tags", "environment", "favorite"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "显示名；可能与 host 相同"
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "主机名或 IP。IPv6 **不带**方括号（落库形态）；拼装地址时按需补"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "RDP 端口，默认 3389"
+        },
+        "username": {
+          "type": ["string", "null"],
+          "description": "不含域；域在 domain 字段"
+        },
+        "domain": {
+          "type": ["string", "null"]
+        },
+        "groupName": {
+          "type": ["string", "null"],
+          "description": "分组**名称**而非 id（换机后 id 无意义）。null = 未分组"
+        },
+        "note": {
+          "type": ["string", "null"]
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 12,
+          "items": { "type": "string", "maxLength": 24 },
+          "description": "标签（自由文本，已去重去空；导出端上限 12 个、单个 24 字）"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["none", "dev", "test", "staging", "prod"],
+          "description": "环境标记；none = 未标注。prod 在界面上会触发连接前二次确认"
+        },
+        "favorite": {
+          "type": "boolean"
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["name", "icon", "color"],
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "icon": { "type": ["string", "null"] },
+        "color": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

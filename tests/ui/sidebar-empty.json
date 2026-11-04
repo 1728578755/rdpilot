@@ -1,0 +1,18 @@
+{
+  "wait": 5000,
+  "steps": [
+    { "eval": "(() => { if (document.querySelector('[data-sidebar-head=\"groups\"]')) return 'ready'; location.reload(); return 'reload'; })()" },
+    { "wait": 3500 },
+    {
+      "eval": "(() => { const empty = document.querySelector('[data-sidebar-groups-empty]'); if (!empty) throw new Error('没有分组时缺少空状态块'); const text = empty.innerText.trim(); if (!text.includes('新建分组')) throw new Error('空状态缺少「新建分组」按钮文案: ' + text); if (text.length < 10) throw new Error('空状态只有一行灰字，没有引导: ' + text); const btn = [...empty.querySelectorAll('button')].find((el) => el.getAttribute('aria-label') === '新建分组'); if (!btn) throw new Error('空状态按钮缺少 aria-label'); const rect = btn.getBoundingClientRect(); if (rect.height < 24) throw new Error('空状态按钮热区不足 24px: ' + rect.height); return { text, buttonHeight: Math.round(rect.height), groups: document.querySelectorAll('[data-sidebar-group]').length }; })()"
+    },
+    { "click": "[data-sidebar-groups-empty] button" },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog]'); if (!dialog) throw new Error('点「新建分组」没有打开弹窗'); if (!(dialog.innerText || '').includes('分组名称')) throw new Error('弹窗内容不对: ' + dialog.innerText.slice(0, 40)); return 'dialog-open'; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    { "shot": ".tmp/b5-sidebar/empty-state.png" }
+  ]
+}

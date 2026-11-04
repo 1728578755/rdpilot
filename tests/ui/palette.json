@@ -1,0 +1,62 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "eval": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'P', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true })); return true; })()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-label*=\"命令面板\"]') || [...document.querySelectorAll('[role=\"dialog\"]')].find((el) => (el.innerText || '').includes('搜索连接')); if (!dialog) throw new Error('Ctrl+Shift+P 未打开命令面板'); const input = dialog.querySelector('input'); if (!input) throw new Error('命令面板缺少输入框'); if (document.activeElement !== input) throw new Error('命令面板打开后输入框未聚焦'); return { open: true, placeholder: input.placeholder }; })()"
+    },
+    {
+      "click": { "placeholder": "搜索连接，或输入 主机:端口 直接连接" }
+    },
+    {
+      "type": "10.68"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const list = document.querySelector('[role=\"listbox\"]'); if (!list) throw new Error('命令面板缺少结果列表'); const options = list.querySelectorAll('[data-palette-select]'); if (options.length === 0) throw new Error('搜索 10.68 没有结果'); const text = list.innerText; if (!text.includes('内网-01') && !text.includes('10.68')) throw new Error('结果未包含种子主机: ' + text.slice(0, 120)); return { results: options.length, matched: true }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/palette.png"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "(() => { if (document.querySelector('[role=\"dialog\"][aria-label*=\"命令面板\"]')) throw new Error('Esc 后命令面板仍在'); return { closed: true }; })()"
+    },
+    {
+      "eval": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'P', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true })); return true; })()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "click": { "placeholder": "搜索连接，或输入 主机:端口 直接连接" }
+    },
+    {
+      "type": "192.0.2.55:3390"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-label*=\"命令面板\"]') || [...document.querySelectorAll('[role=\"dialog\"]')].find((el) => (el.innerText || '').includes('搜索连接')); if (!dialog) throw new Error('第二次打开命令面板失败'); const text = dialog.innerText || ''; if (!text.includes('临时连接')) throw new Error('host:port 未给出临时连接选项: ' + text.slice(0, 200)); if (!text.includes('192.0.2.55')) throw new Error('未回显输入地址'); return { addressOption: true }; })()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 300
+    }
+  ]
+}

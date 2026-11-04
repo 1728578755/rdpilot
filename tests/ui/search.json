@@ -1,0 +1,40 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "click": {
+        "aria": "列表"
+      }
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const rows = document.querySelectorAll('[data-row-index]').length; if (rows !== 4) throw new Error('搜索前行数期望 4，实际 ' + rows); return { rowsBefore: rows }; })()"
+    },
+    {
+      "click": "input[data-search-input=\"true\"]"
+    },
+    {
+      "type": "10.68"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const rows = document.querySelectorAll('[data-row-index]').length; if (rows <= 0) throw new Error('搜索 10.68 后无结果'); if (rows >= 4) throw new Error('搜索 10.68 后行数未减少，仍为 ' + rows); const input = document.querySelector('input[data-search-input=\"true\"]'); if (!input || input.value !== '10.68') throw new Error('搜索框值不符: ' + (input ? input.value : '<缺失>')); return { rowsAfterSearch: rows, keyword: input.value }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/search.png"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const input = document.querySelector('input[data-search-input=\"true\"]'); if (!input) throw new Error('搜索框消失'); if (input.value !== '') throw new Error('Esc 未清空搜索框: ' + input.value); const rows = document.querySelectorAll('[data-row-index]').length; if (rows !== 4) throw new Error('清空搜索后行数未恢复，期望 4，实际 ' + rows); return { rowsRestored: rows, keyword: input.value }; })()"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "wait": 5000,
+  "steps": [
+    {
+      "eval": "(() => { if (document.querySelector('[data-sidebar-head=\"groups\"]')) return 'ready'; location.reload(); return 'reload'; })()"
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "eval": "(() => {\n  if (window.__rail) return 'ready'\n  const INK = 0.175\n  const cy = (el) => { const b = el.getBoundingClientRect(); return (b.top + b.bottom) / 2 }\n  const textInk = (el) => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return { right: b.right, cy: (b.top + b.bottom) / 2 } }\n  const iconInk = (svg) => { const b = svg.getBoundingClientRect(); return { right: b.right - INK * b.height, cy: (b.top + b.bottom) / 2, size: b.height } }\n  const textNodeOf = (slot) => [...slot.children].find((c) => c.textContent.trim().length > 0 && !String(c.className).includes('sr-only'))\n  const measure = () => {\n    const items = []\n    const push = (kind, label, ink, rowEl, hitEl) => {\n      const hit = hitEl ? hitEl.getBoundingClientRect() : null\n      items.push({\n        kind,\n        label: String(label).replace(/\\s+/g, ' ').trim().slice(0, 14),\n        ink: +ink.right.toFixed(2),\n        cy: +ink.cy.toFixed(2),\n        rowCy: rowEl ? +cy(rowEl).toFixed(2) : null,\n        hitW: hit ? +hit.width.toFixed(1) : null,\n        hitH: hit ? +hit.height.toFixed(1) : null,\n        size: ink.size === undefined ? null : ink.size\n      })\n    }\n    const counts = (sel, kind, rowSel) => {\n      for (const slot of document.querySelectorAll(sel)) {\n        const t = textNodeOf(slot)\n        if (!t) continue\n        push(kind, t.textContent, textInk(t), slot.closest(rowSel), null)\n      }\n    }\n    counts('aside nav [data-sidebar-count]', 'nav', 'button')\n    counts('[data-sidebar-group] [data-sidebar-count]', 'group', '[data-sidebar-group]')\n    counts('[data-sidebar-tag] [data-sidebar-count]', 'tag', '[data-sidebar-tag]')\n    for (const key of ['groups', 'views', 'tags']) {\n      const head = document.querySelector('[data-sidebar-head=\"' + key + '\"]')\n      if (!head) continue\n      const svg = head.querySelector('svg')\n      if (svg) push('head-' + key, key, iconInk(svg), head.parentElement, head)\n      else push('head-' + key, head.textContent, textInk(head), head.parentElement, head)\n    }\n    for (const btn of document.querySelectorAll('[data-sidebar-menu]')) {\n      const svg = btn.querySelector('svg')\n      if (!svg) continue\n      const row = btn.closest('[data-sidebar-group],[data-sidebar-tag]') || btn.parentElement\n      push('menu-' + (btn.getAttribute('data-sidebar-menu') || 'row'), '', iconInk(svg), row, btn)\n    }\n    const aside = document.querySelector('aside').getBoundingClientRect()\n    const firstCount = document.querySelector('[data-sidebar-group] [data-sidebar-count]')\n    const tabular = firstCount ? getComputedStyle(textNodeOf(firstCount) || firstCount).fontVariantNumeric : ''\n    return { aside: { w: +aside.width.toFixed(2), right: +aside.right.toFixed(2) }, items, tabular }\n  }\n  const check = (label) => {\n    const m = measure()\n    const fail = (msg) => { throw new Error('[' + label + '] ' + msg) }\n    const need = (k, n) => { const got = m.items.filter((i) => i.kind === k).length; if (got < n) fail('样本不足 ' + k + '=' + got + '（需要 ' + n + '）') }\n    need('nav', 3); need('group', 2); need('tag', 2); need('menu-group', 1)\n    for (const k of ['head-groups', 'head-views']) if (!m.items.some((i) => i.kind === k)) fail('缺少头部按钮 ' + k)\n    const rights = m.items.map((i) => i.ink)\n    const spread = Math.max(...rights) - Math.min(...rights)\n    const rail = Math.min(...rights)\n    if (spread > 1) fail('右轨墨迹未对齐，最大差值 ' + spread.toFixed(2) + 'px: ' + JSON.stringify(m.items.map((i) => i.kind + '=' + i.ink)))\n    const rows = m.items.filter((i) => i.rowCy !== null)\n    const dyMax = Math.max(...rows.map((i) => Math.abs(i.cy - i.rowCy)))\n    const dyBad = rows.filter((i) => Math.abs(i.cy - i.rowCy) > 1).map((i) => i.kind + ':' + (i.cy - i.rowCy).toFixed(2))\n    if (dyMax > 1) fail('垂直中心与行中心偏差 ' + dyMax.toFixed(2) + 'px: ' + JSON.stringify(dyBad))\n    for (const item of m.items) {\n      if (item.kind.startsWith('head-') || item.kind.startsWith('menu-')) {\n        if (item.hitH !== null && Math.abs(item.hitH - 24) > 0.5) fail(item.kind + ' 热区高度应为 24，实际 ' + item.hitH)\n        if (item.size !== null) {\n          if (Math.abs(item.hitW - 24) > 0.5) fail(item.kind + ' 热区应为 24×24，实际 ' + item.hitW + '×' + item.hitH)\n          if (Math.abs(item.size - 14) > 0.01) fail(item.kind + ' 图标应为 14px，实际 ' + item.size)\n        }\n      }\n    }\n    if (!m.tabular.includes('tabular-nums')) fail('计数未使用等宽数字: ' + m.tabular)\n    const offset = m.aside.right - rail\n    if (Math.abs(offset - 23.25) > 0.8) fail('轨道线距侧栏右缘应为 23.25px（1 边框 + 8 容器 + 12 行内 + 2.45 描边），实际 ' + offset.toFixed(2))\n    return {\n      label,\n      asideWidth: m.aside.w,\n      railInk: +rail.toFixed(2),\n      railOffset: +offset.toFixed(2),\n      spread: +spread.toFixed(2),\n      dyMax: +dyMax.toFixed(2),\n      samples: m.items.length,\n      icons: m.items.filter((i) => i.size !== null).length,\n      table: m.items.map((i) => i.kind + ' @x' + i.ink + ' y' + i.cy + (i.rowCy === null ? '' : ' row' + i.rowCy))\n    }\n  }\n  window.__rail = { measure, check }\n  return 'ready'\n})()"
+    },
+    {
+      "eval": "window.__rail.check('180')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align-180.png"
+    },
+    {
+      "eval": "(async () => {\n  const res = await window.api.settings.update({ sidebarWidth: 200 })\n  if (!res.ok) throw new Error('settings.update(sidebarWidth=200) 失败: ' + JSON.stringify(res.error))\n  const end = Date.now() + 3000\n  for (;;) {\n    const got = Math.round(document.querySelector('aside').getBoundingClientRect().width)\n    if (got === 200) return { width: got }\n    if (Date.now() > end) throw new Error('侧栏宽度未变为 200，实际 ' + got)\n    await new Promise((r) => setTimeout(r, 60))\n  }\n})()"
+    },
+    {
+      "eval": "window.__rail.check('200')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align-200.png"
+    },
+    {
+      "eval": "(async () => {\n  const res = await window.api.settings.update({ sidebarWidth: 240 })\n  if (!res.ok) throw new Error('settings.update(sidebarWidth=240) 失败: ' + JSON.stringify(res.error))\n  const end = Date.now() + 3000\n  for (;;) {\n    const got = Math.round(document.querySelector('aside').getBoundingClientRect().width)\n    if (got === 240) return { width: got }\n    if (Date.now() > end) throw new Error('侧栏宽度未变为 240，实际 ' + got)\n    await new Promise((r) => setTimeout(r, 60))\n  }\n})()"
+    },
+    {
+      "eval": "window.__rail.check('240')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align-240.png"
+    },
+    {
+      "eval": "(async () => {\n  const res = await window.api.settings.update({ sidebarWidth: 180 })\n  if (!res.ok) throw new Error('settings.update(sidebarWidth=180) 失败: ' + JSON.stringify(res.error))\n  const end = Date.now() + 3000\n  for (;;) {\n    const got = Math.round(document.querySelector('aside').getBoundingClientRect().width)\n    if (got === 180) return { width: got }\n    if (Date.now() > end) throw new Error('侧栏宽度未变为 180，实际 ' + got)\n    await new Promise((r) => setTimeout(r, 60))\n  }\n})()"
+    },
+    {
+      "eval": "(async () => {\n  const res = await window.api.settings.update({ theme: 'light' })\n  if (!res.ok) throw new Error('settings.update(theme) 失败: ' + JSON.stringify(res.error))\n  const end = Date.now() + 3000\n  for (;;) {\n    if (document.documentElement.dataset.theme === 'light') return { theme: 'light' }\n    if (Date.now() > end) throw new Error('主题未切换为 light，实际 ' + document.documentElement.dataset.theme)\n    await new Promise((r) => setTimeout(r, 60))\n  }\n})()"
+    },
+    {
+      "eval": "window.__rail.check('light')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align-light.png"
+    },
+    {
+      "eval": "(async () => {\n  const res = await window.api.settings.update({ theme: 'dark' })\n  if (!res.ok) throw new Error('settings.update(theme) 失败: ' + JSON.stringify(res.error))\n  const end = Date.now() + 3000\n  for (;;) {\n    if (document.documentElement.dataset.theme === 'dark') return { theme: 'dark' }\n    if (Date.now() > end) throw new Error('主题未切换为 dark，实际 ' + document.documentElement.dataset.theme)\n    await new Promise((r) => setTimeout(r, 60))\n  }\n})()"
+    },
+    {
+      "eval": "window.__rail.check('dark')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align-dark.png"
+    },
+    {
+      "eval": "(() => { document.querySelector('[aria-controls=\"app-sidebar\"]').click(); return 'clicked' })()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(async () => {\n  const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const v = fn(); if (v) return v; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)) } }\n  const aside = document.querySelector('aside')\n  if (!(await waitFor(() => Math.round(aside.getBoundingClientRect().width) === 56))) throw new Error('折叠态宽度应为 56，实际 ' + aside.getBoundingClientRect().width)\n  const counts = document.querySelectorAll('[data-sidebar-count]').length\n  if (counts !== 0) throw new Error('折叠态不应残留计数槽: ' + counts)\n  const plus = aside.querySelector('button[aria-label=\"新建分组\"]')\n  if (!plus) throw new Error('折叠态缺少新建分组入口')\n  const svg = plus.querySelector('svg')\n  const p = plus.getBoundingClientRect()\n  const s = svg.getBoundingClientRect()\n  const asideRect = aside.getBoundingClientRect()\n  const dx = (s.left + s.right) / 2 - (asideRect.left + asideRect.right) / 2\n  const dy = (s.top + s.bottom) / 2 - (p.top + p.bottom) / 2\n  if (Math.abs(dx) > 1.5) throw new Error('折叠态加号未水平居中，偏 ' + dx.toFixed(2))\n  if (Math.abs(dy) > 1.5) throw new Error('折叠态加号未在按钮内垂直居中，偏 ' + dy.toFixed(2))\n  return { width: Math.round(asideRect.width), counts, dx: +dx.toFixed(2), dy: +dy.toFixed(2), hit: Math.round(p.width) + 'x' + Math.round(p.height) }\n})()"
+    },
+    {
+      "eval": "(() => { document.querySelector('[aria-controls=\"app-sidebar\"]').click(); return 'clicked' })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.__rail.check('restored')"
+    },
+    {
+      "shot": ".tmp/b6-sidebar/plus-align.png"
+    }
+  ]
+}

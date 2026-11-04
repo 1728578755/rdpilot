@@ -1,0 +1,11 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "eval": "(() => { const hasAllHosts = document.body.innerText.includes('全部主机'); if (!hasAllHosts) throw new Error('body 未包含「全部主机」'); const docOverflow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth; if (docOverflow > 1) throw new Error('文档横向溢出 ' + docOverflow + 'px'); const root = document.querySelector('[data-scroll-root=\"true\"]'); if (!root) throw new Error('找不到内容区滚动容器'); const rootOverflow = root.scrollWidth - root.clientWidth; if (rootOverflow > 1) throw new Error('内容区横向溢出 ' + rootOverflow + 'px'); const rows = document.querySelectorAll('[data-row-index]').length; if (rows < 1) throw new Error('种子数据未渲染（列表行数为 0）'); return { hasAllHosts, docOverflow, rootOverflow, rows }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/boot.png"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "click": "[data-sidebar-quick=\"create\"]"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "click": { "placeholder": "host:port" }
+    },
+    {
+      "type": "192.0.2.77"
+    },
+    {
+      "clickText": "高级连接"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('新建抽屉未打开'); const text = dialog.innerText || ''; for (const label of ['显示', '重定向', '安全', '网络']) { if (!text.includes(label)) throw new Error('高级分区缺少「' + label + '」'); } const switches = [...dialog.querySelectorAll('[role=\"switch\"]')]; if (switches.length < 10) throw new Error('高级开关数量不足: ' + switches.length); const mic = switches.find((el) => (el.innerText || '').includes('麦克风重定向')); if (!mic) throw new Error('找不到麦克风重定向开关'); if (mic.getAttribute('aria-checked') !== 'false') throw new Error('麦克风重定向默认应关闭'); mic.click(); return { groups: 4, switches: switches.length, micOn: mic.getAttribute('aria-checked') }; })()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "click": { "text": "保存", "exact": true }
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); if (!list.ok) throw new Error('连接列表失败'); const conn = list.data.find((entry) => entry.host === '192.0.2.77'); if (!conn) throw new Error('保存后找不到新连接'); if (conn.advanced.audioCapture !== true) throw new Error('麦克风重定向未持久化: ' + JSON.stringify(conn.advanced)); if (conn.advanced.dynamicResolution !== true) throw new Error('动态分辨率默认值丢失'); if (conn.displayMode !== 'window') throw new Error('默认显示模式异常（Batch 5 起应为窗口化）: ' + conn.displayMode); if (conn.resolution !== null) throw new Error('默认分辨率应为自适应（null），实际: ' + JSON.stringify(conn.resolution)); return { saved: true, audioCapture: conn.advanced.audioCapture, dynamicResolution: conn.advanced.dynamicResolution, displayMode: conn.displayMode, resolution: conn.resolution, id: conn.id }; })()"
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (dialog) throw new Error('保存成功后抽屉未关闭'); return { closed: true }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/advanced-rdp.png"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "wait": 3600,
+  "steps": [
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); if (!list.ok) throw new Error('connections.list 失败'); const c = list.data[0]; const input = { name: c.name, host: c.host, port: c.port, username: c.username, domain: c.domain, groupId: c.groupId, note: c.note, colorTag: c.colorTag, displayMode: c.displayMode, resolution: c.resolution, colorDepth: c.colorDepth, audioMode: c.audioMode, clipboard: c.clipboard !== false, drives: !!c.drives, printers: !!c.printers, tags: ['b8'], environment: c.environment, gateway: null, smartCard: false, serial: false, camera: false, adminSession: false, alternateShell: 'C:/tools/shell.exe', sessionOverride: 'auto', smartSizing: true, fullscreenMonitor: -1, credentialId: null, templateId: 'tpl-b8-test', customFields: { room: 'A3', owner: 'zhangsan' }, advanced: Object.assign({}, c.advanced, { monitorMode: 'selection', monitorIds: ['1', '2'], clipboardDirection: 'local-to-remote', driveLetters: ['C', 'D'], startProgram: 'C:/tools/agent.exe', loadBalanceInfo: 'b8-lb' }) }; const res = await window.api.connections.update(c.id, { input: input, rememberPassword: false, clearCredential: false }); if (!res.ok) throw new Error('准备富配置失败: ' + res.error.message); window.__b8Id = c.id; window.__b8Name = c.name; return { id: c.id, name: c.name, advanced: res.data.advanced.monitorIds, custom: res.data.customFields, tpl: res.data.templateId, fm: res.data.fullscreenMonitor }; })()"
+    },
+    { "eval": "(() => { window.dispatchEvent(new Event('focus')); return 'sync-dispatched'; })()" },
+    { "wait": 1600 },
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); const c = list.data.find((x) => x.id === window.__b8Id); if (!c) throw new Error('准备后找不到连接'); const strip = (o) => { const copy = Object.assign({}, o); delete copy.name; delete copy.updatedAt; return copy }; window.__b8Before = JSON.stringify(strip(c)); const rich = { monitorIds: c.advanced && c.advanced.monitorIds, driveLetters: c.advanced && c.advanced.driveLetters, startProgram: c.advanced && c.advanced.startProgram, customFields: c.customFields, templateId: c.templateId, fullscreenMonitor: c.fullscreenMonitor, alternateShell: c.alternateShell }; if (!rich.monitorIds || rich.monitorIds.length !== 2) throw new Error('前置富配置没写进去（monitorIds）: ' + JSON.stringify(rich)); if (JSON.stringify(rich.driveLetters) !== JSON.stringify(['C', 'D'])) throw new Error('前置富配置没写进去（driveLetters）: ' + JSON.stringify(rich)); if (!rich.startProgram) throw new Error('前置富配置没写进去（startProgram）'); if (Object.keys(rich.customFields || {}).length !== 2) throw new Error('前置富配置没写进去（customFields）: ' + JSON.stringify(rich.customFields)); if (rich.templateId !== 'tpl-b8-test') throw new Error('前置富配置没写进去（templateId）: ' + JSON.stringify(rich)); if (rich.fullscreenMonitor !== -1) throw new Error('前置富配置没写进去（fullscreenMonitor）: ' + JSON.stringify(rich)); if (!rich.alternateShell) throw new Error('前置富配置没写进去（alternateShell）'); return { before: window.__b8Before.length, rich: rich }; })()"
+    },
+    {
+      "eval": "(() => { const rows = [...document.querySelectorAll('[data-row-index]')]; if (rows.length < 2) throw new Error('需要至少 2 行'); const mine = rows.find((r) => (r.getAttribute('aria-label') || '').includes(window.__b8Name)); if (!mine) throw new Error('列表里找不到目标行（store 未同步？）: ' + window.__b8Name); mine.dispatchEvent(new MouseEvent('click', { bubbles: true })); const other = rows.find((r) => r !== mine); other.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true })); return { mine: mine.getAttribute('data-row-index'), other: other.getAttribute('data-row-index') }; })()"
+    },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const bar = document.querySelector('[data-selection-bar=\"true\"]'); if (!bar) throw new Error('批量条未出现'); const text = bar.innerText.replace(/\\s+/g, ' '); if (!text.includes('已选 2 项')) throw new Error('批量条计数异常: ' + text); const btn = [...bar.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || '') === '批量命名'); if (!btn) throw new Error('找不到「批量命名」按钮'); btn.click(); return { bar: text.slice(0, 24) }; })()"
+    },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const target = [...document.querySelectorAll('input')].find((el) => (el.getAttribute('placeholder') || '').indexOf('{index}') >= 0); if (!target) throw new Error('找不到模板输入框'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(target, '{name}-b8{index}'); target.dispatchEvent(new Event('input', { bubbles: true })); return { value: target.value, placeholder: target.placeholder }; })()"
+    },
+    { "wait": 300 },
+    { "shot": ".tmp/b8-bugs/rename-dialog.png" },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('批量命名对话框未打开'); const preview = dialog.innerText.replace(/\\s+/g, ' '); const apply = [...dialog.querySelectorAll('button')].find((b) => (b.innerText || '').trim() === '应用'); if (!apply) throw new Error('找不到「应用」按钮: ' + preview.slice(0, 80)); apply.click(); return { preview: preview.slice(0, 60) }; })()"
+    },
+    { "wait": 1800 },
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); const c = list.data.find((x) => x.id === window.__b8Id); if (!c) throw new Error('改名后连接不见了'); const strip = (o) => { const copy = Object.assign({}, o); delete copy.name; delete copy.updatedAt; return copy }; const after = JSON.stringify(strip(c)); if (c.name === window.__b8Name) throw new Error('名称未变化：批量命名没有生效'); if (after !== window.__b8Before) { const before = JSON.parse(window.__b8Before); const now = JSON.parse(after); const diff = Object.keys(now).filter((k) => JSON.stringify(before[k]) !== JSON.stringify(now[k])); throw new Error('除 name 外有字段被改写: ' + JSON.stringify({ fields: diff, before: diff.map((k) => before[k]), after: diff.map((k) => now[k]) })); } return { renamed: c.name, monitorIds: c.advanced.monitorIds, driveLetters: c.advanced.driveLetters, clipboardDirection: c.advanced.clipboardDirection, startProgram: c.advanced.startProgram, customFields: c.customFields, templateId: c.templateId, fullscreenMonitor: c.fullscreenMonitor, alternateShell: c.alternateShell, tags: c.tags, unchangedFields: Object.keys(JSON.parse(after)).length }; })()"
+    },
+    { "shot": ".tmp/b8-bugs/rename-after.png" }
+  ]
+}

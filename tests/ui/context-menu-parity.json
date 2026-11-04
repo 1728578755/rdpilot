@@ -1,0 +1,28 @@
+{
+  "wait": 3800,
+  "steps": [
+    { "eval": "(() => { window.__menus = {}; return 'init'; })()" },
+    { "rightClick": "[data-row-index=\"0\"]" },
+    { "wait": 350 },
+    { "eval": "(() => { const m=document.querySelector('[role=menu]'); if (!m) throw new Error('行右键菜单未打开'); window.__menus.rowRight = m.innerText.replace(/\\s+/g,' ').trim(); return window.__menus.rowRight; })()" },
+    { "press": "Escape" },
+    { "wait": 250 },
+    { "click": "[data-row-index=\"0\"] button[aria-label=\"更多操作\"]" },
+    { "wait": 350 },
+    { "eval": "(() => { const m=document.querySelector('[role=menu]'); if (!m) throw new Error('行「⋯」菜单未打开'); window.__menus.rowButton = m.innerText.replace(/\\s+/g,' ').trim(); return window.__menus.rowButton; })()" },
+    { "press": "Escape" },
+    { "wait": 250 },
+    { "eval": "(async () => { const r = await window.api.settings.update({ layout: 'grid-3' }); if (!r.ok) throw new Error('切换网格失败'); await new Promise((res)=>setTimeout(res, 900)); return 'grid'; })()" },
+    { "rightClick": "[data-card-root]" },
+    { "wait": 350 },
+    { "eval": "(() => { const m=document.querySelector('[role=menu]'); if (!m) throw new Error('卡片右键菜单未打开（卡片与行是否走了同一个 actions.contextMenu？）'); window.__menus.cardRight = m.innerText.replace(/\\s+/g,' ').trim(); return window.__menus.cardRight; })()" },
+    { "press": "Escape" },
+    { "wait": 250 },
+    { "click": "[data-card-root] button[aria-label=\"更多操作\"]" },
+    { "wait": 350 },
+    { "eval": "(() => { const m=document.querySelector('[role=menu]'); if (!m) throw new Error('卡片「⋯」菜单未打开'); window.__menus.cardButton = m.innerText.replace(/\\s+/g,' ').trim(); const keys=Object.keys(window.__menus); if (keys.length !== 4) throw new Error('缺少菜单样本: '+keys.join(',')); const base=window.__menus.rowRight; for (const key of keys) { if (window.__menus[key] !== base) throw new Error('菜单不一致（'+key+'）:\\n'+base+'\\n---\\n'+window.__menus[key]); } return { equal: true, items: base.split(' ').length, sample: base.slice(0,120) }; })()" },
+    { "shot": ".tmp/b5-polish/context-menu-parity.png" },
+    { "press": "Escape" },
+    { "eval": "(async () => { await window.api.settings.update({ layout: 'list' }); return 'restored'; })()" }
+  ]
+}

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    # Windows-only: credential handling uses DPAPI, history import uses the registry,
+    # and the session state machine relies on mstsc / tasklist.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build native components
+        run: npm run build:native
+
+      - name: Build application
+        run: npm run build
+
+      - name: Verify (source-level suites, no GUI)
+        run: npm run verify
+        env:
+          CI: true
+
+      - name: Audit production dependencies
+        run: npm run audit
+
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    needs: verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build installer and portable exe
+        run: npm run build:win
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rdpilot-windows-x64
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/SHA256SUMS.txt
+          if-no-files-found: error

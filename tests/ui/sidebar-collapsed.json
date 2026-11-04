@@ -1,0 +1,18 @@
+{
+  "wait": 5000,
+  "steps": [
+    { "eval": "(() => { if (document.querySelector('[data-sidebar-head=\"groups\"]')) return 'ready'; location.reload(); return 'reload'; })()" },
+    { "wait": 3500 },
+    { "click": "[aria-controls=\"app-sidebar\"]" },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const aside = document.querySelector('aside'); const width = Math.round(aside.getBoundingClientRect().width); if (width !== 56) throw new Error('折叠态宽度应为 56px，实际 ' + width); const create = aside.querySelector('button[aria-label=\"新建分组\"]'); if (!create) throw new Error('折叠态缺少新建分组入口'); if (!create.getAttribute('title')) throw new Error('折叠态新建分组缺少 title 提示'); const groupButtons = [...aside.querySelectorAll('button[aria-pressed]')]; if (groupButtons.length < 2) throw new Error('折叠态缺少分组图标按钮: ' + groupButtons.length); if (document.querySelectorAll('[data-sidebar-count]').length !== 0) throw new Error('折叠态不应残留计数槽'); return { width, groupButtons: groupButtons.length, createTitle: create.getAttribute('title') }; })()"
+    },
+    { "shot": ".tmp/b5-sidebar/collapsed-56.png" },
+    { "click": "[aria-controls=\"app-sidebar\"]" },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const width = Math.round(document.querySelector('aside').getBoundingClientRect().width); if (width !== 180) throw new Error('展开后宽度应回到 180，实际 ' + width); if (!document.querySelector('[data-sidebar-head=\"groups\"]')) throw new Error('展开后分组头部没有回来'); return { width }; })()"
+    }
+  ]
+}

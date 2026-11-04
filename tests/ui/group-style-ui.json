@@ -1,0 +1,30 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "eval": "(async () => { const r = await window.api.groups.create({ name: '视觉分组' }); if (!r.ok) throw new Error(JSON.stringify(r)); return r.data.id; })()"
+    },
+    { "eval": "(() => { location.reload(); return 'reloading'; })()" },
+    { "wait": 4500 },
+    {
+      "eval": "(() => { if (!document.body.innerText.includes('视觉分组')) throw new Error('重载后侧栏没有新分组'); return 'group-visible'; })()"
+    },
+    {
+      "eval": "(() => { let row = null; for (const el of document.querySelectorAll('div,button,span')) { const txt = (el.textContent || '').trim(); if (txt.startsWith('视觉分组') && txt.length <= 16) row = el; } if (!row) throw new Error('找不到分组行'); row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 120, clientY: 220 })); return row.tagName + ':' + row.className.slice(0, 40); })()"
+    },
+    { "wait": 500 },
+    { "clickText": "图标与颜色" },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const dialog = [...document.querySelectorAll('[role=\"dialog\"]')].find((el) => el.textContent && el.textContent.includes('图标')); if (!dialog) throw new Error('外观弹窗没有打开'); return dialog.innerText.replace(/\\s+/g, ' ').slice(0, 80); })()"
+    },
+    { "click": { "aria": "服务器" } },
+    { "wait": 300 },
+    { "clickText": "保存" },
+    { "wait": 1200 },
+    {
+      "eval": "(async () => { const list = await window.api.groups.list(); const row = list.data.find((g) => g.name === '视觉分组'); if (!row) throw new Error('分组不见了'); if (row.icon !== 'server') throw new Error('图标未落库：' + JSON.stringify(row.icon)); const dialogStill = [...document.querySelectorAll('[role=\"dialog\"]')].some((el) => el.textContent && el.textContent.includes('图标')); if (dialogStill) throw new Error('保存成功后弹窗没有关闭'); return { icon: row.icon, color: row.color }; })()"
+    },
+    { "shot": ".tmp/ui-shots/group-style.png" }
+  ]
+}

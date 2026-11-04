@@ -1,0 +1,58 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "clickText": "新建连接"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('新建连接抽屉未打开'); const title = (dialog.querySelector('h2')?.innerText || '').trim(); if (!title.includes('新建连接')) throw new Error('抽屉标题不含「新建连接」: ' + title); const host = dialog.querySelector('input[placeholder*=\"host:port\"]'); if (!host) throw new Error('找不到主机输入框'); const focused = document.activeElement === host; const more = [...dialog.querySelectorAll('button')].find((node) => (node.innerText || '').includes('更多设置')); if (!more) throw new Error('找不到「更多设置」'); if (more.getAttribute('aria-expanded') !== 'false') throw new Error('新建态「更多设置」应默认收起'); const nameHidden = dialog.querySelector('input[placeholder=\"如：办公室电脑\"]'); if (nameHidden) throw new Error('名称应留在「更多设置」里默认收起'); const userShown = dialog.querySelector('input[placeholder=\"Administrator\"]'); if (!userShown) throw new Error('用户名必须常驻首屏，不能被收进「更多设置」'); return { drawerOpen: true, title, hostAutofocused: focused, moreCollapsed: true }; })()"
+    },
+    {
+      "click": {
+        "placeholder": "host:port"
+      }
+    },
+    {
+      "type": "10.255.255.1"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('输入后抽屉被关闭'); const host = dialog.querySelector('input[placeholder*=\"host:port\"]'); if (!host || host.value !== '10.255.255.1') throw new Error('主机输入值不符: ' + (host ? host.value : '<缺失>')); const port = dialog.querySelector('input[inputmode=\"numeric\"]'); if (!port || port.value !== '3389') throw new Error('端口应保持默认 3389: ' + (port ? port.value : '<缺失>')); const save = [...dialog.querySelectorAll('button')].find((node) => (node.innerText || '').trim() === '保存'); if (!save) throw new Error('找不到「保存」按钮'); if (save.disabled) throw new Error('「保存」按钮仍为禁用'); const remember = dialog.querySelector('[role=\"switch\"]'); if (!remember) throw new Error('找不到「保存密码」开关'); if (remember.getAttribute('aria-checked') !== 'true') throw new Error('remember switch 期望 aria-checked=true，实际 ' + remember.getAttribute('aria-checked')); const outline = getComputedStyle(host).outlineColor; if (outline !== 'rgba(0, 0, 0, 0)') throw new Error('输入框内层焦点环未关闭（会与外层容器叠成双框）: ' + outline); return { drawerOpen: true, host: host.value, port: port.value, saveEnabled: !save.disabled, rememberChecked: remember.getAttribute('aria-checked'), innerOutline: outline }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/new-connection.png"
+    },
+    {
+      "clickText": "更多设置"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); const more = [...dialog.querySelectorAll('button')].find((node) => (node.innerText || '').includes('更多设置')); if (more.getAttribute('aria-expanded') !== 'true') throw new Error('「更多设置」未展开'); const name = dialog.querySelector('input[placeholder=\"如：办公室电脑\"]'); if (!name) throw new Error('展开后找不到名称输入'); const user = dialog.querySelector('input[placeholder=\"Administrator\"]'); if (!user) throw new Error('展开后找不到用户名输入'); return { moreExpanded: true, name: !!name, username: !!user }; })()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "(() => { const alert = document.querySelector('[role=\"alertdialog\"][aria-modal=\"true\"]'); if (!alert) throw new Error('Esc 未触发「放弃未保存的修改」确认框'); const text = alert.innerText || ''; if (!text.includes('放弃未保存的修改')) throw new Error('确认框文案不符: ' + text.slice(0, 120)); return { alertOpened: true, titleMatched: true }; })()"
+    },
+    {
+      "clickText": "放弃修改"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(async () => { const dialogs = document.querySelectorAll('[role=\"dialog\"], [role=\"alertdialog\"]'); if (dialogs.length !== 0) throw new Error('关闭后仍有 ' + dialogs.length + ' 个浮层'); const res = await window.api.connections.list(); if (!res.ok) throw new Error('读取连接列表失败: ' + res.error.code); if (res.data.length !== 4) throw new Error('不应保存新连接，实际 ' + res.data.length + ' 条'); return { dialogs: 0, storedConnections: res.data.length, saved: false }; })()"
+    }
+  ]
+}

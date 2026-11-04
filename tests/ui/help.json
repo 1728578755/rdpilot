@@ -1,0 +1,26 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "press": "F1"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('F1 未打开帮助弹窗'); const title = (dialog.querySelector('h2')?.innerText || '').trim(); if (title !== '帮助与快速上手') throw new Error('帮助标题不符: ' + title); const cards = dialog.querySelectorAll('.grid > div'); if (cards.length < 4) throw new Error('帮助摘要主题不足 4 个: ' + cards.length); const full = [...dialog.querySelectorAll('button')].find((node) => (node.innerText || '').includes('打开完整帮助')); if (!full) throw new Error('缺少「打开完整帮助」入口'); const keys = dialog.querySelectorAll('kbd'); if (keys.length < 4) throw new Error('摘要缺少快捷键表: ' + keys.length); return { open: true, title, cards: cards.length, shortcuts: keys.length }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/help.png"
+    },
+    {
+      "clickText": "打开完整帮助"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "(() => { const dialogs = document.querySelectorAll('[role=\"dialog\"][aria-modal=\"true\"]'); if (dialogs.length !== 0) throw new Error('打开完整帮助后摘要弹窗仍在'); const section = document.querySelector('#settings-help'); if (!section) throw new Error('未跳转到设置 → 帮助中心'); const title = (section.querySelector('h2')?.innerText || '').trim(); if (!title) throw new Error('帮助中心分节缺少标题'); return { open: false, dialogs: 0, section: 'settings-help', title }; })()"
+    }
+  ]
+}

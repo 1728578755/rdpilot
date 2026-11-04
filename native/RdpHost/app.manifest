@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RdpHost.exe 的应用程序清单（R5 #561）。
+
+  为什么需要：主进程是 Chromium（原生 Per-Monitor DPI），宿主是 WinForms。
+  宿主要是只声明 `SetProcessDPIAware()`（system DPI aware），在 100% + 150% 混合 DPI
+  的多屏环境里，落在副屏的窗口会被系统位图拉伸 —— 远程桌面画面整体发糊、光标偏移。
+  清单里声明 `PerMonitorV2` 后，窗口按各显示器自己的 DPI 渲染，不再被拉伸。
+
+  测试矩阵（无真实多屏环境时至少按此表人工验证，见 docs/batch4/session.md）：
+    ┌─────────────┬─────────────┬──────────────┬──────────────┐
+    │ 主屏 DPI    │ 副屏 DPI    │ 窗口化会话   │ 全屏会话     │
+    ├─────────────┼─────────────┼──────────────┼──────────────┤
+    │ 100%        │ 150%        │ 清晰/坐标正  │ 目标屏正确   │
+    │ 150%        │ 100%        │ 清晰/坐标正  │ 目标屏正确   │
+    │ 150%        │ 150%        │ 清晰         │ 目标屏正确   │
+    │ 100%        │ 100%        │ 清晰         │ 目标屏正确   │
+    └─────────────┴─────────────┴──────────────┴──────────────┘
+
+  注意：`.NET Framework 4.8` 的 WinForms 要实现完整的 PerMonitorV2 缩放还需要
+  app.config 里的 `System.Windows.Forms.ApplicationConfigurationSection`（DpiAwareness）。
+  宿主刻意**没有**打开它：窗口内所有尺寸都由我们自己按像素算（AutoScaleMode=None），
+  打开 WinForms 自动缩放反而会让标签条与 Ax 控件的像素尺寸对不上。
+-->
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="RDPilot.RdpHost" />
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- 旧系统（Win7/8.1）认识这个；true/pm = per-monitor -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <!-- Win10 1703+：优先 PerMonitorV2，不支持则退到 PerMonitor -->
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 / 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+      <!-- Windows 8.1 -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}" />
+    </application>
+  </compatibility>
+</assembly>

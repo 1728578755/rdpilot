@@ -1,0 +1,49 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "rightClick": "[data-row-index=\"0\"]"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "(() => { const menu = document.querySelector('[role=menu]'); if (!menu) throw new Error('右键菜单未打开'); const text = menu.innerText; for (const need of ['连接','编辑','取消收藏','复制地址和端口','复制名称','复制…','复制连接','分享','移动到分组','删除']) { if (!text.includes(need)) throw new Error('右键菜单缺少 '+need+': '+text); } const order = ['连接','编辑','取消收藏','复制地址和端口','复制名称','复制…','复制连接','分享','移动到分组','删除'].map((k)=>text.indexOf(k)); for (let i=1;i<order.length;i+=1) { if (order[i] < order[i-1]) throw new Error('右键菜单顺序漂移，第 '+i+' 项「'+['连接','编辑','取消收藏','复制地址和端口','复制名称','复制…','复制连接','分享','移动到分组','删除'][i]+'」应在前一项之后: '+JSON.stringify(order)+'\\n'+text); } if (!/删除\\s*$/.test(text.trim())) throw new Error('危险项「删除」必须在菜单最后: '+text); return { text: text.replace(/\\s+/g,' | ') }; })()"
+    },
+    {
+      "click": {
+        "text": "复制…"
+      }
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "(() => { const menus=[...document.querySelectorAll('[role=menu]')]; const sub=menus.find((m)=>m.parentElement && m.parentElement.closest('[role=menu]')) || menus[menus.length-1]; const text=sub?.innerText ?? ''; for (const need of ['复制主机 / IP','完整信息','复制用户名']) { if (!text.includes(need)) throw new Error('复制子菜单缺少 '+need+': '+text); } if (text.includes('复制名称') || text.includes('复制地址和端口')) throw new Error('一级复制项不应在子菜单里重复出现: '+text); return text; })()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "(() => { const root = document.querySelector('[data-scroll-root=\"true\"]'); root.scrollTop = 0; const r = root.getBoundingClientRect(); const cx = Math.round((r.left + r.right) / 2); const cy = Math.round((r.top + r.bottom) / 2); const el = document.elementFromPoint(cx, cy); if (!el) throw new Error('空白区没有命中任何元素'); if (el.closest('[data-row-index], [data-card-root=\"true\"]')) throw new Error('取的点落在了行/卡片上，不是空白区'); return { point: [cx, cy], tag: el.tagName, cls: String(el.className).slice(0, 48), isScrollRoot: el === root }; })()"
+    },
+    {
+      "rightClick": "[data-scroll-root=\"true\"]"
+    },
+    {
+      "wait": 450
+    },
+    {
+      "eval": "(() => { const menu = document.querySelector('[role=menu]'); if (!menu) throw new Error('列表空白处右键没有弹出菜单（appMenu 路径断了）'); const text = menu.innerText.replace(/\\s+/g, ' ').trim(); const want = ['新建连接', '从剪贴板导入', '导入 Windows 历史', '复制全部配置', '导出配置文件', '导入配置文件']; for (const need of want) { if (!text.includes(need)) throw new Error('空白处菜单缺少「' + need + '」: ' + text); } const order = want.map((k) => text.indexOf(k)); for (let i = 1; i < order.length; i += 1) { if (order[i] < order[i - 1]) throw new Error('空白处菜单顺序漂移，第 ' + i + ' 项「' + want[i] + '」应在「' + want[i - 1] + '」之后: ' + JSON.stringify(order) + ' | ' + text); } if (text.includes('复制地址和端口')) throw new Error('空白处不应出现连接菜单项: ' + text); return { items: want.length, text }; })()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "shot": ".tmp/ui-shots/context-menu.png"
+    }
+  ]
+}

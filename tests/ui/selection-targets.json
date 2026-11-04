@@ -1,0 +1,32 @@
+{
+  "wait": 3600,
+  "steps": [
+    { "click": "[data-row-index=\"0\"]" },
+    { "wait": 250 },
+    { "click": "[data-row-index=\"1\"]", "modifiers": ["ctrl"] },
+    { "wait": 250 },
+    { "click": "[data-row-index=\"2\"]", "modifiers": ["ctrl"] },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const bar = document.querySelector('[data-selection-bar=\"true\"]'); if (!bar) throw new Error('选中 3 行后批量条未出现'); const text = bar.innerText.replace(/\\s+/g, ' '); if (!text.includes('已选 3 项')) throw new Error('批量条计数异常: ' + text); if (bar.querySelector('[data-selection-hidden=\"true\"]')) throw new Error('无筛选时不该出现「被筛选隐藏」提示'); return { bar: text.slice(0, 30) }; })()"
+    },
+    { "click": "input[data-search-input=\"true\"]" },
+    { "type": "10.68" },
+    { "wait": 700 },
+    {
+      "eval": "(() => { const rows = document.querySelectorAll('[data-row-index]').length; if (rows !== 2) throw new Error('搜索 10.68 后应只剩 2 行，实际 ' + rows); const bar = document.querySelector('[data-selection-bar=\"true\"]'); if (!bar) throw new Error('筛选后批量条消失（可见选中应为 2 台）'); const text = bar.innerText.replace(/\\s+/g, ' '); if (!text.includes('已选 2 项')) throw new Error('批量条显示数与可见集合不同源: ' + text); const hidden = bar.querySelector('[data-selection-hidden=\"true\"]'); if (!hidden) throw new Error('缺少「被筛选隐藏」提示'); if (!hidden.innerText.includes('1')) throw new Error('隐藏提示条数不是 1: ' + hidden.innerText); return { rows, bar: text.slice(0, 48), hidden: hidden.innerText }; })()"
+    },
+    { "shot": ".tmp/b8-bugs/selection-bar-filter.png" },
+    {
+      "eval": "(() => { const bar = document.querySelector('[data-selection-bar=\"true\"]'); const btn = bar.querySelector('[data-batch-disconnect=\"true\"]'); if (!btn) throw new Error('缺少断开按钮'); btn.click(); return 'clicked'; })()"
+    },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"], [role=\"alertdialog\"]'); const scope = dialog || document.body; const text = (scope.innerText || '').replace(/\\s+/g, ' '); if (!text.includes('断开选中的 2 台')) throw new Error('断开目标不是可见交集（期望 2 台）: ' + text.slice(0, 120)); if (text.includes('断开选中的 3 台')) throw new Error('断开目标仍包含被筛选隐藏的那台: ' + text.slice(0, 80)); const buttons = [...scope.querySelectorAll('button')]; const cancel = buttons.find((b) => (b.innerText || '').trim() === '取消'); if (cancel) cancel.click(); return { dialogs: document.querySelectorAll('[role=\"dialog\"], [role=\"alertdialog\"]').length, confirm: text.slice(0, 40) }; })()"
+    },
+    { "wait": 300 },
+    {
+      "eval": "(() => { const input = document.querySelector('input[data-search-input=\"true\"]'); if (input) { input.focus(); } return { ok: true }; })()"
+    }
+  ]
+}

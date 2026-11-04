@@ -1,0 +1,280 @@
+/* ==========================================================================
+   无障碍 / 阅读偏好（Batch 2 · Agent H）
+
+   由 main.tsx 在 index.css 之后 import，因此这里的普通规则（不放进 @layer）
+   会稳定压过 Tailwind utilities 与 :where() 降权的全局规则。
+   所有开关都由 documentElement 上的 --font-scale / class / data 属性驱动，
+   组件本身不需要知道用户选了什么。
+   ========================================================================== */
+
+/* ============================== 字号缩放 ============================== */
+:root {
+  /* 80–150%；具体数值由 a11y/apply.ts 写到 documentElement 的 inline style */
+  --font-scale: 1;
+}
+
+html {
+  /* rem/em 字体跟随；固定 px 的 rp-text-* 阶梯在下面单独重算 */
+  font-size: calc(16px * var(--font-scale));
+}
+
+body {
+  font-size: calc(13px * var(--font-scale));
+}
+
+/*
+ * 设计系统所有字号都来自这几个 token（rp-text-caption 等 utility 只是引用它们）。
+ * 用 calc 重算而不是给每个组件改 rem：覆盖一处即可，布局里的固定高度不参与缩放。
+ */
+:root {
+  --font-caption: calc(11px * var(--font-scale));
+  --font-body-s: calc(12px * var(--font-scale));
+  --font-body: calc(13px * var(--font-scale));
+  --font-body-l: calc(14px * var(--font-scale));
+  --font-title: calc(16px * var(--font-scale));
+  --font-display: calc(20px * var(--font-scale));
+}
+
+/*
+ * 仍有少量 Tailwind 任意值字号（text-[11px] 等）直接写死 px。
+ * 用 class token 选择器统一重算，避免"设了 150% 但徽标/表头还是原大小"。
+ * `class~=` 按空白分隔的完整 token 匹配，不会误伤 text-[11px] 以外的类。
+ */
+html[data-a11y-font-scale] [class~='text-[10px]'] {
+  font-size: calc(10px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[10.5px]'] {
+  font-size: calc(10.5px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[11px]'] {
+  font-size: calc(11px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[11.5px]'] {
+  font-size: calc(11.5px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[12px]'] {
+  font-size: calc(12px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[12.5px]'] {
+  font-size: calc(12.5px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[13px]'] {
+  font-size: calc(13px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[14px]'] {
+  font-size: calc(14px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[14.5px]'] {
+  font-size: calc(14.5px * var(--font-scale));
+}
+html[data-a11y-font-scale] [class~='text-[15px]'] {
+  font-size: calc(15px * var(--font-scale));
+}
+
+/* ============================== 高对比模式 ============================== */
+html.rp-a11y-high-contrast[data-theme='dark'] {
+  --text-1: #ffffff;
+  --text-2: #e8ebf2;
+  --text-3: #d3d8e2;
+  --border: #7c8595;
+  --border-strong: #b6bdc9;
+  --divider: #5b6371;
+  --row-hover: #2f3542;
+  --row-active: #343f5e;
+  --chip: #31374a;
+  --focus-ring: #ffd54a;
+}
+
+html.rp-a11y-high-contrast[data-theme='light'] {
+  --text-1: #000000;
+  --text-2: #111827;
+  --text-3: #1f2937;
+  --border: #4b5563;
+  --border-strong: #111827;
+  --divider: #6b7280;
+  --row-hover: #e5e7eb;
+  --row-active: #dbeafe;
+  --chip: #e5e7eb;
+  --focus-ring: #7c2d12;
+}
+
+/* 高对比下输入框/卡片的底与线也必须分开，不只改文字 */
+html.rp-a11y-high-contrast[data-theme='dark'] input,
+html.rp-a11y-high-contrast[data-theme='dark'] select,
+html.rp-a11y-high-contrast[data-theme='dark'] textarea,
+html.rp-a11y-high-contrast[data-theme='light'] input,
+html.rp-a11y-high-contrast[data-theme='light'] select,
+html.rp-a11y-high-contrast[data-theme='light'] textarea {
+  border-color: var(--border);
+}
+
+/* ============================== 下划线链接 ============================== */
+html.rp-a11y-underline-links a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+/* ============================== 焦点环 ============================== */
+html.rp-a11y-focus-bold :where(button, [role='button'], [role='menuitem'], a, input, select, textarea):focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+}
+
+html.rp-a11y-focus-bold .rp-focus-ring:focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+}
+
+html.rp-a11y-focus-bold .rp-focus-ring-inset:focus-visible {
+  outline-width: 3px;
+  outline-offset: -3px;
+}
+
+/*
+ * 焦点环裁剪（R5 #532）：滚动容器边缘的首/尾项用内偏移绘制，
+ * 并把焦点滚动留出一点呼吸空间，避免 outline 被 overflow 切掉。
+ */
+[data-scroll-root='true'] :focus-visible,
+[data-sidebar-scroll='true'] :focus-visible {
+  outline-offset: -2px;
+}
+
+/* 加粗模式在滚动容器里也向内画，避免 3px 外偏移被 overflow 裁掉 */
+html.rp-a11y-focus-bold [data-scroll-root='true'] :focus-visible,
+html.rp-a11y-focus-bold [data-sidebar-scroll='true'] :focus-visible {
+  outline-offset: -3px;
+}
+
+:focus-visible {
+  scroll-margin-block: 12px;
+}
+
+[data-scroll-root='true'],
+[data-sidebar-scroll='true'] {
+  scroll-padding-block: 12px;
+}
+
+/* ============================== 减少动效 ============================== */
+/* 跟随系统：沿用 index.css 的 @media (prefers-reduced-motion: reduce)。 */
+
+/* 始终减少：不依赖系统开关，直接压平装饰动画与过渡 */
+html[data-a11y-reduce-motion='always'] .rp-breath,
+html[data-a11y-reduce-motion='always'] .rp-flow,
+html[data-a11y-reduce-motion='always'] .rp-shimmer,
+html[data-a11y-reduce-motion='always'] .rp-toast-in,
+html[data-a11y-reduce-motion='always'] .rp-modal-in,
+html[data-a11y-reduce-motion='always'] .rp-drawer-in,
+html[data-a11y-reduce-motion='always'] [class*='animate-[rp-'] {
+  animation: none !important;
+}
+
+html[data-a11y-reduce-motion='always'] .rp-flow {
+  background-image: none;
+  background-color: var(--primary);
+  opacity: 0.5;
+}
+
+html[data-a11y-reduce-motion='always'] .rp-shimmer {
+  background-image: none;
+  background-color: var(--surface-2);
+}
+
+html[data-a11y-reduce-motion='always'] *,
+html[data-a11y-reduce-motion='always'] *::before,
+html[data-a11y-reduce-motion='always'] *::after {
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * 关闭：即使 Windows 开了「减少动态效果」也保留动效（用户显式选择优先）。
+ * 只恢复本应用实际使用的几组动画；未知第三方动画保持系统降级。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html[data-a11y-reduce-motion='off'] .rp-breath {
+    animation: rp-breath 1.4s ease-in-out infinite !important;
+  }
+  html[data-a11y-reduce-motion='off'] .rp-flow {
+    animation: rp-flow 1.2s linear infinite !important;
+    background-image: var(--gradient-brand);
+    opacity: 1;
+  }
+  html[data-a11y-reduce-motion='off'] .rp-shimmer {
+    animation: rp-shimmer 1.4s ease-in-out infinite !important;
+    background-image: linear-gradient(
+      90deg,
+      var(--surface-2) 25%,
+      var(--border) 37%,
+      var(--surface-2) 63%
+    );
+  }
+  html[data-a11y-reduce-motion='off'] [class*='animate-[rp-toast-in'] {
+    animation: rp-toast-in var(--dur-base) var(--ease-standard) !important;
+  }
+  html[data-a11y-reduce-motion='off'] [class*='animate-[rp-modal-in'] {
+    animation: rp-modal-in var(--dur-base) var(--ease-standard) !important;
+  }
+  html[data-a11y-reduce-motion='off'] [class*='animate-[rp-drawer-in'] {
+    animation: rp-drawer-in var(--dur-slow) var(--ease-decelerate) !important;
+  }
+  html[data-a11y-reduce-motion='off'] *,
+  html[data-a11y-reduce-motion='off'] *::before,
+  html[data-a11y-reduce-motion='off'] *::after {
+    transition-duration: var(--dur-base) !important;
+  }
+}
+
+/* ============================== 屏幕阅读器工具类 ============================== */
+.rp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================== 系统强制色彩 ============================== */
+/*
+ * Windows 高对比主题会走 forced-colors（Electron/Chromium）。
+ * 这里只做最低限度适配：文字/背景交给系统色，焦点环与进度条用 Highlight，
+ * 避免出现"黑底黑字"或被渐变吞掉的状态。
+ */
+@media (forced-colors: active) {
+  html,
+  body {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  a {
+    color: LinkText;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+
+  html.rp-a11y-focus-bold :focus-visible {
+    outline-width: 3px !important;
+  }
+
+  .rp-flow,
+  .rp-shimmer {
+    background-image: none !important;
+    background-color: Highlight !important;
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "wait": 4500,
+  "steps": [
+    {
+      "eval": "(async () => { for (const id of ['live-01','live-02','live-03']) { const r = await window.api.credentials.save(id, 'TestPass-123'); if (!r.ok) throw new Error('保存测试密码失败：' + id); } return 'credentials-saved'; })()"
+    },
+    {
+      "eval": "(async () => { const res = await window.api.connections.batchConnect({ connectionIds: ['live-01','live-02','live-03'], origin: 'selection' }); if (!res.ok) throw new Error('批量连接未启动：' + res.error.message); const r = res.data; if (r.total !== 3) throw new Error('批量条目数不是 3：' + r.total); if (r.succeeded + r.failed + r.skipped !== r.done) throw new Error('计数不自洽：' + JSON.stringify(r)); if (r.succeeded < 1) throw new Error('三台都未发起：' + JSON.stringify(r.items.map((i) => [i.connectionId, i.status, i.reason]))); return { batchId: r.batchId, total: r.total, succeeded: r.succeeded, failed: r.failed, skipped: r.skipped }; })()"
+    },
+    { "wait": 3000 },
+    {
+      "eval": "(async () => { const res = await window.api.sessions.list(); if (!res.ok) throw new Error('会话列表读取失败：' + res.error.message); const live = res.data.filter((s) => s.connectionId.startsWith('live-')); if (live.length < 1) throw new Error('批量后没有任何会话被纳管'); const connected = live.filter((s) => s.state === 'connected'); if (connected.length > 0) throw new Error('假 RDP 只做 X.224，不应出现已连接：' + connected.map((s) => s.connectionId).join(',')); return live.map((s) => ({ id: s.connectionId, state: s.state })); })()"
+    },
+    { "shot": ".tmp/live/batch-connect.png" }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "click": { "text": "设置", "exact": true }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "eval": "(() => { const ids = ['settings-appearance', 'settings-visual-detail', 'settings-window', 'settings-session', 'settings-new-defaults', 'settings-system', 'settings-connection', 'settings-credentials', 'settings-session-advanced', 'settings-batch-connect', 'settings-monitor', 'settings-data', 'settings-import-export', 'settings-reliability', 'settings-card', 'settings-organization', 'settings-shortcuts', 'settings-accessibility', 'settings-help', 'settings-about']; const missing = ids.filter((id) => !document.getElementById(id)); if (missing.length > 0) throw new Error('缺少设置分节: ' + missing.join(',')); const dup = ids.filter((id) => document.querySelectorAll('#' + id).length !== 1); if (dup.length > 0) throw new Error('分节 id 重复: ' + dup.join(',')); const nav = document.querySelector('[data-settings-index=\"true\"]'); if (!nav) throw new Error('缺少左侧导航'); const links = [...nav.querySelectorAll('button[data-settings-nav=\"true\"]')]; if (links.length !== 20) throw new Error('导航分节链接数量应为 20，实际 ' + links.length); const tall = links.map((el) => { const lh = parseFloat(getComputedStyle(el).lineHeight) || 20; return { text: (el.textContent || '').trim(), h: el.clientHeight, lh, limit: lh * 2 + 2 }; }).filter((item) => item.h > item.limit); if (tall.length > 0) throw new Error('导航标签超过两行: ' + JSON.stringify(tall)); const cats = [...nav.querySelectorAll('[data-settings-category-toggle=\"true\"]')]; if (cats.length !== 6) throw new Error('分类标题数量应为 6，实际 ' + cats.length); const badAria = cats.filter((el) => el.getAttribute('aria-expanded') !== 'true' && el.getAttribute('aria-expanded') !== 'false'); if (badAria.length > 0) throw new Error('分类标题缺少 aria-expanded: ' + badAria.length); const content = document.querySelector('[data-settings-content=\"true\"]'); if (!content) throw new Error('缺少内容列'); const root = content.parentElement; const navRect = nav.getBoundingClientRect(); const contentRect = content.getBoundingClientRect(); const rootRect = root.getBoundingClientRect(); const gap = parseFloat(getComputedStyle(root).columnGap) || 0; const left = contentRect.left - (navRect.right + gap); if (Math.abs(left) > 2) throw new Error('内容列没有紧跟导航（间距 ' + gap + 'px 之后应紧贴），实际偏移 ' + left.toFixed(1)); const shell = document.querySelector('[data-scroll-root=\"true\"]'); let right = 0; if (shell) { const sr = shell.getBoundingClientRect(); const navLeft = navRect.left - sr.left; if (navLeft < 8 || navLeft > 24) throw new Error('设置导航左缘应距侧边栏约 16px，实际 ' + navLeft.toFixed(1)); right = sr.right - contentRect.right; } if (contentRect.width > 921) throw new Error('内容列宽度超过 920: ' + contentRect.width); return { sections: ids.length, links: links.length, categories: cats.length, navWidth: Math.round(navRect.width), contentWidth: Math.round(contentRect.width), leftGap: Number(left.toFixed(1)), rightGap: Number(right.toFixed(1)) }; })()"
+    },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const cat = nav.querySelector('[data-settings-category=\"personalize\"]'); const toggle = cat.querySelector('[data-settings-category-toggle=\"true\"]'); if (toggle.getAttribute('aria-expanded') !== 'true') throw new Error('分类默认应展开'); const before = cat.querySelectorAll('button[data-settings-nav=\"true\"]').length; if (before < 2) throw new Error('个性化分类分节过少: ' + before); toggle.click(); return { before }; })()"
+    },
+    {
+      "wait": 200
+    },
+    {
+      "eval": "(() => { const cat = document.querySelector('[data-settings-category=\"personalize\"]'); const toggle = cat.querySelector('[data-settings-category-toggle=\"true\"]'); if (toggle.getAttribute('aria-expanded') !== 'false') throw new Error('收起后 aria-expanded 未变 false'); const visible = [...cat.querySelectorAll('button[data-settings-nav=\"true\"]')].filter((el) => el.offsetParent !== null); if (visible.length !== 0) throw new Error('收起后分节仍可见: ' + visible.length); toggle.click(); return { collapsed: true }; })()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "(() => { const cat = document.querySelector('[data-settings-category=\"personalize\"]'); const toggle = cat.querySelector('[data-settings-category-toggle=\"true\"]'); if (toggle.getAttribute('aria-expanded') !== 'true') throw new Error('再次展开失败'); const visible = [...cat.querySelectorAll('button[data-settings-nav=\"true\"]')].filter((el) => el.offsetParent !== null); if (visible.length === 0) throw new Error('展开后分节不可见'); return { restored: visible.length }; })()"
+    },
+    {
+      "eval": "(() => { const input = document.querySelector('input[type=\"search\"]'); if (!input) throw new Error('缺少设置搜索框'); const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(input, '初始尺寸'); input.dispatchEvent(new Event('input', { bubbles: true })); return { typed: true }; })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const hits = [...document.querySelectorAll('ul li button')].filter((el) => (el.textContent || '').includes('初始尺寸')); if (hits.length === 0) throw new Error('搜索「初始尺寸」没有命中新设置项'); hits[0].click(); return { hits: hits.length, jumped: true }; })()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const sessions = document.getElementById('settings-session'); if (!sessions || sessions.style.display === 'none') throw new Error('搜索跳转后会话分节仍被隐藏'); const active = document.querySelector('button[data-settings-nav=\"true\"][aria-current=\"true\"]'); if (!active) throw new Error('跳转后导航没有高亮项'); const input = document.querySelector('input[type=\"search\"]'); if (input.value !== '') throw new Error('跳转后搜索词未清空'); return { active: active.textContent.trim() }; })()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "(() => { window.location.hash = '#settings/monitor'; return { hash: window.location.hash }; })()"
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "eval": "(() => { const el = document.getElementById('settings-monitor'); if (!el) throw new Error('缺少监控分节'); const root = document.querySelector('[data-scroll-root=\"true\"]'); const offset = el.getBoundingClientRect().top - root.getBoundingClientRect().top; if (offset > 160) throw new Error('深链未滚动到监控分节，偏移 ' + Math.round(offset)); const active = document.querySelector('button[data-settings-nav=\"true\"][aria-current=\"true\"]'); if (!active || active.dataset.sectionId !== 'settings-monitor') throw new Error('深链后导航高亮错误: ' + (active && active.dataset.sectionId)); const cat = document.querySelector('[data-settings-category=\"monitor\"]'); if (!cat || cat.querySelector('[data-settings-category-toggle=\"true\"]').getAttribute('aria-expanded') !== 'true') throw new Error('深链目标分类未展开'); return { offset: Math.round(offset) }; })()"
+    }
+  ]
+}

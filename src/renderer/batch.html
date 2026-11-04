@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      批量连接矩阵窗口（Batch 5）。
+      CSP 与主窗口同一套策略：脚本只允许 'self' 与主题初始化脚本的 sha256；
+      样式允许 inline（React style 属性）；不放开任何外部源。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'sha256-m5cKvid1MKIYY6KlMn44hAuziCbjxKGql8r/f+e4i86s=' 'sha256-Z2/iFzh9VMlVkEOar1f/oSHWwQk3ve1qk/C2WdsC4Xk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'none'"
+    />
+    <!-- 首帧前写 data-theme：必须在样式表之前同步执行，否则深色用户会看到白闪 -->
+    <script>
+      ;(function () {
+        try {
+          var dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      })()
+    </script>
+    <title>RDPilot · 批量连接</title>
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: #14161c;
+        color: #e8eaf0;
+        font-family: 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+      }
+      html[data-theme='light'] body {
+        background: #f5f7fb;
+        color: #1a1d26;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/batch-main.tsx"></script>
+  </body>
+</html>

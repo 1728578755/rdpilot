@@ -1,0 +1,56 @@
+{
+  "wait": 5000,
+  "steps": [
+    {
+      "eval": "(() => { if (document.querySelector('[data-sidebar-head=\"groups\"]')) return 'ready'; location.reload(); return 'reload'; })()"
+    },
+    { "wait": 3500 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 4000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; if (!(await waitFor(() => document.querySelector('[data-sidebar-head=\"groups\"]')))) throw new Error('侧栏头部未渲染（应处于展开态）'); const right = (el) => { if (!el) throw new Error('缺少头部操作按钮'); return el.getBoundingClientRect().right; }; const q = (s) => [...document.querySelectorAll(s)]; const nav = q('aside nav [data-sidebar-count]').map(right); const groups = q('[data-sidebar-group] [data-sidebar-count]').map(right); const tags = q('[data-sidebar-tag] [data-sidebar-count]').map(right); const headGroups = right(document.querySelector('[data-sidebar-head=\"groups\"]')); const headViews = right(document.querySelector('[data-sidebar-head=\"views\"]')); const headTags = right(document.querySelector('[data-sidebar-head=\"tags\"]')); if (nav.length < 3 || groups.length < 2 || tags.length < 2) throw new Error('计数样本不足 nav=' + nav.length + ' groups=' + groups.length + ' tags=' + tags.length); const all = [...nav, ...groups, ...tags, headGroups, headViews, headTags]; const spread = Math.max(...all) - Math.min(...all); if (spread > 1) throw new Error('右侧轨道未对齐，最大差值 ' + spread.toFixed(2) + 'px: ' + JSON.stringify(all.map((n) => +n.toFixed(2)))); const row = document.querySelector('[data-sidebar-group=\"ungrouped\"]'); const slot = row.querySelector('[data-sidebar-count]'); const slotWidth = slot.getBoundingClientRect().width; if (Math.abs(slotWidth - 44) > 0.5) throw new Error('计数槽宽度应为 44px，实际 ' + slotWidth); window.__align = { width: row.getBoundingClientRect().width, rail: nav[0] }; return { nav: nav.map((n) => +n.toFixed(2)), groups: groups.map((n) => +n.toFixed(2)), tags: tags.map((n) => +n.toFixed(2)), headGroups: +headGroups.toFixed(2), headViews: +headViews.toFixed(2), headTags: +headTags.toFixed(2), spread: +spread.toFixed(2), slotWidth: +slotWidth.toFixed(2) }; })()"
+    },
+    { "clickText": "收藏" },
+    { "wait": 350 },
+    { "click": "[data-sidebar-group=\"ungrouped\"]" },
+    { "wait": 500 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; const row = document.querySelector('[data-sidebar-group=\"ungrouped\"]'); const width = row.getBoundingClientRect().width; if (Math.abs(width - window.__align.width) > 0.5) throw new Error('hover 后行宽变化: ' + window.__align.width + ' → ' + width); const menu = row.querySelector('[data-sidebar-menu]'); if (!menu) throw new Error('分组行缺少 ⋯ 按钮'); const rect = menu.getBoundingClientRect(); if (rect.width < 24 || rect.height < 24) throw new Error('⋯ 热区不足 24×24: ' + rect.width + '×' + rect.height); if (Math.abs(rect.right - window.__align.rail) > 1) throw new Error('⋯ 右缘 ' + rect.right.toFixed(2) + ' 未落在轨道 ' + window.__align.rail.toFixed(2)); const shown = await waitFor(() => getComputedStyle(menu).opacity === '1'); if (!shown) throw new Error('hover 后 ⋯ 未显示，opacity=' + getComputedStyle(menu).opacity); if (getComputedStyle(row.querySelector('[data-sidebar-count]')).opacity !== '0') throw new Error('hover 后计数应让位给 ⋯'); return { width: +width.toFixed(2), menuRight: +rect.right.toFixed(2), hit: Math.round(rect.width) + 'x' + Math.round(rect.height) }; })()"
+    },
+    { "click": "[data-sidebar-group=\"ungrouped\"] [data-sidebar-menu]" },
+    { "wait": 300 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; const text = await waitFor(() => document.querySelector('[role=menu]')?.innerText); if (!text) throw new Error('未分组的 ⋯ 没有弹出菜单'); for (const need of ['批量连接未分组', '矩阵窗口']) { if (!text.includes(need)) throw new Error('未分组菜单缺少「' + need + '」: ' + text); } return text; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    { "click": "[data-sidebar-group]:nth-child(3) [data-sidebar-menu]" },
+    { "wait": 300 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; const text = await waitFor(() => document.querySelector('[role=menu]')?.innerText); if (!text) throw new Error('分组行的 ⋯ 没有弹出菜单'); for (const need of ['重命名', '图标与颜色', '批量连接（矩阵窗口）', '整组断开', '上移', '下移', '删除分组']) { if (!text.includes(need)) throw new Error('分组菜单缺少「' + need + '」: ' + text); } return text; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; const row = document.querySelector('[data-sidebar-group]:nth-child(3)'); const rect = row.getBoundingClientRect(); row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: Math.round(rect.x + 40), clientY: Math.round(rect.y + 10) })); const menu = await waitFor(() => document.querySelector('[role=menu]')?.innerText); if (!menu) throw new Error('右键（contextmenu 事件）没有弹出分组菜单'); return menu; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    {
+      "eval": "(async () => { const waitFor = async (fn, ms = 3000) => { const end = Date.now() + ms; for (;;) { const value = fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((r) => setTimeout(r, 60)); } }; const row = document.querySelector('[data-sidebar-group]:nth-child(3)'); const trigger = row.querySelector('button'); if (!trigger) throw new Error('找不到分组行按钮'); trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true, bubbles: true, cancelable: true })); const menu = await waitFor(() => document.querySelector('[role=menu]')?.innerText); if (!menu) throw new Error('Shift+F10 没有弹出分组菜单'); return menu; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    { "click": "[data-sidebar-head=\"tags\"]" },
+    { "wait": 250 },
+    {
+      "eval": "(() => { const btn = document.querySelector('[data-sidebar-head=\"tags\"]'); if (btn.getAttribute('aria-expanded') !== 'true') throw new Error('「更多」点击后 aria-expanded 应为 true，实际 ' + btn.getAttribute('aria-expanded')); if (!/更多|收起/.test(btn.innerText)) throw new Error('「更多」按钮文案异常: ' + btn.innerText); return btn.innerText.trim(); })()"
+    },
+    { "click": "[data-sidebar-head=\"tags\"]" },
+    { "wait": 250 },
+    { "clickText": "全部主机" },
+    { "wait": 500 },
+    { "shot": ".tmp/b5-sidebar/sidebar-align.png" },
+    { "click": "[data-sidebar-group=\"ungrouped\"]" },
+    { "wait": 600 },
+    { "shot": ".tmp/b5-sidebar/hover-row.png" }
+  ]
+}

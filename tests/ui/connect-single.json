@@ -1,0 +1,15 @@
+{
+  "wait": 4500,
+  "steps": [
+    {
+      "eval": "(async () => { const r = await window.api.credentials.save('live-01', 'TestPass-123'); if (!r.ok) throw new Error('保存测试密码失败'); return 'ok'; })()"
+    },
+    { "click": "[data-row-index='0']" },
+    { "press": "Enter" },
+    { "wait": 12000 },
+    {
+      "eval": "(() => { const row = document.querySelector('[data-row-index=\"0\"]'); if (!row) throw new Error('找不到第一行'); const text = row.innerText.replace(/\\s+/g, ' '); if (text.includes('已连接')) throw new Error('假 RDP 服务器只做了 X.224 协商，不应显示「已连接」：' + text); if (!/未建立连接|失败|连接中|离线/.test(text)) throw new Error('连接后状态文案异常：' + text); const dots = [...row.querySelectorAll('[data-status]')].map((n) => ({ status: n.dataset.status, color: n.dataset.color, bg: getComputedStyle(n).backgroundColor })); return { text, dots }; })()"
+    },
+    { "shot": ".tmp/live/single-connect.png" }
+  ]
+}

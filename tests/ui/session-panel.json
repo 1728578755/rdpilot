@@ -1,0 +1,16 @@
+{
+  "wait": 3500,
+  "steps": [
+    { "click": { "aria": "活动会话" } },
+    { "wait": 6000 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (!dialog) throw new Error('活动会话面板未打开'); const text = dialog.innerText || ''; if (!text.includes('活动会话')) throw new Error('面板标题缺少「活动会话」: ' + text.slice(0, 160)); if (!text.includes('没有活动会话')) throw new Error('无活动会话时应显示空态「当前没有活动会话」；若本机有未纳管的 mstsc 窗口，此断言需在干净环境重跑。实际文本: ' + text.slice(0, 240)); const rect = dialog.getBoundingClientRect(); if (rect.left < -1 || rect.right > window.innerWidth + 1) throw new Error('会话面板横向越出视口: ' + rect.left + '..' + rect.right + ' / ' + window.innerWidth); const width = window.innerWidth; const documentOverflow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - width; if (documentOverflow > 1) throw new Error('打开会话面板后文档横向溢出 ' + documentOverflow + 'px'); const root = document.querySelector('[data-scroll-root=true]'); const rootOverflow = root ? root.scrollWidth - root.clientWidth : 0; if (rootOverflow > 1) throw new Error('打开会话面板后内容区横向溢出 ' + rootOverflow + 'px'); const close = Array.from(dialog.querySelectorAll('button')).find((el) => (el.getAttribute('aria-label') || '') === '关闭'); if (!close) throw new Error('会话面板缺少关闭按钮'); return { open: true, empty: true, panelWidth: +rect.width.toFixed(1), panelRight: +rect.right.toFixed(1), documentOverflow, rootOverflow }; })()"
+    },
+    { "shot": ".tmp/ui-shots/session-panel.png" },
+    { "press": "Escape" },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (dialog) throw new Error('Escape 后会话面板未关闭'); return { closed: true }; })()"
+    }
+  ]
+}

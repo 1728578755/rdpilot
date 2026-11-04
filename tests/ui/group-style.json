@@ -1,0 +1,8 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "eval": "(async () => { const created = await window.api.groups.create({ name: '样式冒烟组' }); if (!created.ok) throw new Error('创建分组失败：' + JSON.stringify(created)); const id = created.data.id; const upd = await window.api.groups.updateStyle(id, { icon: 'server', color: '#4B6EF5' }); if (!upd.ok) throw new Error('更新分组外观失败：' + JSON.stringify(upd)); const list = await window.api.groups.list(); if (!list.ok) throw new Error('读取分组失败'); const row = list.data.find((g) => g.id === id); if (!row) throw new Error('列表里找不到刚建的分组'); if (row.icon !== 'server' || row.color !== '#4B6EF5') throw new Error('外观没有落库：' + JSON.stringify({ icon: row.icon, color: row.color })); const bad = await window.api.groups.updateStyle(id, { color: '#123456' }); if (bad.ok) throw new Error('非法颜色竟然被接受'); const badIcon = await window.api.groups.updateStyle(id, { icon: 'Bad Icon!' }); if (badIcon.ok) throw new Error('非法图标竟然被接受'); return { id, icon: row.icon, color: row.color, badCode: bad.error.code, badIconCode: badIcon.error.code }; })()"
+    }
+  ]
+}

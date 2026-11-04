@@ -1,0 +1,24 @@
+{
+  "wait": 3600,
+  "steps": [
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); if (!list.ok) throw new Error('list 失败'); const base = list.data[0]; const made = []; for (let i = 0; i < 240; i += 1) { const input = { name: '虚拟化-' + String(i).padStart(3, '0'), host: '10.9.' + Math.floor(i / 250) + '.' + (i % 250), port: 3389, username: 'Administrator', domain: null, groupId: null, note: null, colorTag: base.colorTag, displayMode: 'window', resolution: null, colorDepth: 32, audioMode: 'local', clipboard: true, drives: false, printers: false, favorite: false }; const res = await window.api.connections.create({ input: input, rememberPassword: false, password: null }); if (!res.ok) throw new Error('批量造数据失败 @' + i + ': ' + res.error.message); made.push(res.data.id); } window.__b8Many = made.length; return { created: made.length }; })()"
+    },
+    { "eval": "(() => { window.dispatchEvent(new Event('focus')); return 'sync'; })()" },
+    { "wait": 2500 },
+    {
+      "eval": "(() => { const rows = document.querySelectorAll('[data-row-index]'); if (rows.length >= 200) throw new Error('列表没有虚拟化（' + rows.length + ' 行全渲染）'); if (rows.length < 3) throw new Error('渲染行太少: ' + rows.length); const first = document.querySelector('[data-row-index=\"0\"]'); first.focus(); return { rendered: rows.length, total: window.__b8Many + 4, renderedRange: [rows[0].getAttribute('data-row-index'), rows[rows.length - 1].getAttribute('data-row-index')] }; })()"
+    },
+    { "press": "End" },
+    { "wait": 900 },
+    {
+      "eval": "(() => { const total = window.__b8Many + 4; const last = total - 1; const active = document.activeElement; if (!active || active.getAttribute('data-row-index') !== String(last)) throw new Error('End 后焦点不在最后一行：' + (active ? (active.getAttribute('data-row-index') || active.tagName) : '<null>') + '，期望 ' + last); const rect = active.getBoundingClientRect(); if (rect.height === 0) throw new Error('最后一行尺寸为 0'); const root = document.querySelector('[data-scroll-root=\"true\"]'); const rootRect = root.getBoundingClientRect(); if (rect.top < rootRect.top || rect.bottom > rootRect.bottom + 1) throw new Error('最后一行不在可视区内: top=' + Math.round(rect.top) + ' bottom=' + Math.round(rect.bottom) + ' viewport=' + Math.round(rootRect.top) + '..' + Math.round(rootRect.bottom)); return { focused: last, top: Math.round(rect.top), scrollTop: Math.round(root.scrollTop), rendered: document.querySelectorAll('[data-row-index]').length }; })()"
+    },
+    { "press": "Home" },
+    { "wait": 900 },
+    {
+      "eval": "(() => { const active = document.activeElement; if (!active || active.getAttribute('data-row-index') !== '0') throw new Error('Home 后焦点不在第一行：' + (active ? (active.getAttribute('data-row-index') || active.tagName) : '<null>')); const root = document.querySelector('[data-scroll-root=\"true\"]'); return { focused: 0, scrollTop: Math.round(root.scrollTop), rendered: document.querySelectorAll('[data-row-index]').length }; })()"
+    },
+    { "shot": ".tmp/b8-bugs/list-home-end.png" }
+  ]
+}

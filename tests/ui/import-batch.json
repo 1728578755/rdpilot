@@ -1,0 +1,20 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "eval": "(async () => { const csv = 'name,host,port,username,domain,group,note,tags,environment\\nUI-CSV-01,192.0.2.10,3389,alice,CORP,UI导入组,来自 CSV,\"ui;csv\",test'; const preview = await window.api.imports.preview({ kind: 'csv', text: csv }); if (!preview.ok) throw new Error('CSV 预览失败: ' + preview.error.message); const item = preview.data.items[0]; if (!item || item.host !== '192.0.2.10') throw new Error('预览主机不符: ' + JSON.stringify(preview.data.items)); if (item.port !== 3389 || item.environment !== 'test') throw new Error('预览端口/环境不符: ' + JSON.stringify(item)); if (!item.tags.includes('ui') || !item.tags.includes('csv')) throw new Error('预览标签未拆分: ' + JSON.stringify(item.tags)); if (preview.data.invalid !== 0) throw new Error('预览出现无效条目'); return { preview: true, host: item.host, group: item.groupPath.join('/'), tags: item.tags }; })()"
+    },
+    {
+      "eval": "(async () => { const csv = 'name,host,port,username,domain,group,note,tags,environment\\nUI-CSV-01,192.0.2.10,3389,alice,CORP,UI导入组,来自 CSV,\"ui;csv\",test'; const commit = await window.api.imports.commit({ kind: 'csv', text: csv, options: { skipDuplicates: true, importGroups: true, importPasswords: false, targetGroupId: null } }); if (!commit.ok) throw new Error('CSV 导入失败: ' + commit.error.message); if (commit.data.added !== 1) throw new Error('导入条数不符: ' + JSON.stringify(commit.data)); const list = await window.api.connections.list(); if (!list.ok) throw new Error('连接列表失败'); const conn = list.data.find((entry) => entry.host === '192.0.2.10'); if (!conn) throw new Error('导入的连接未落库'); if (conn.environment !== 'test' || !conn.tags.includes('ui')) throw new Error('导入字段未保留: ' + JSON.stringify({ env: conn.environment, tags: conn.tags })); if (conn.note !== '来自 CSV') throw new Error('备注未保留: ' + conn.note); return { added: commit.data.added, groupsCreated: commit.data.groupsCreated, id: conn.id }; })()"
+    },
+    {
+      "eval": "(async () => { const rdp = 'full address:s:192.0.2.11:3390\\nusername:s:bob\\ndomain:s:CORP\\ndesktopwidth:i:1600\\ndesktopheight:i:900\\naudmode:i:0\\nredirectclipboard:i:1\\n'; const preview = await window.api.imports.preview({ kind: 'rdp', text: rdp }); if (!preview.ok) throw new Error('.rdp 预览失败: ' + preview.error.message); const item = preview.data.items[0]; if (!item || item.host !== '192.0.2.11' || item.port !== 3390) throw new Error('.rdp 地址解析不符: ' + JSON.stringify(item)); if (item.username !== 'bob' || item.domain !== 'CORP') throw new Error('.rdp 用户名/域不符: ' + JSON.stringify(item)); return { rdp: true, host: item.host, port: item.port }; })()"
+    },
+    {
+      "eval": "(async () => { const csv = 'host,port\\n192.0.2.10,3389\\n'; const preview = await window.api.imports.preview({ kind: 'csv', text: csv }); if (!preview.ok) throw new Error('重复预览失败'); if (preview.data.duplicates !== 1) throw new Error('重复检测未生效: ' + preview.data.duplicates); const commit = await window.api.imports.commit({ kind: 'csv', text: csv, options: { skipDuplicates: true, importGroups: false, importPasswords: false, targetGroupId: null } }); if (!commit.ok) throw new Error('重复提交失败'); if (commit.data.added !== 0) throw new Error('重复项被再次导入: ' + commit.data.added); return { duplicateSkipped: true }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/import-batch.png"
+    }
+  ]
+}

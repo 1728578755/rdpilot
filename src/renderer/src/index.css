@@ -1,0 +1,449 @@
+@import './theme/tokens.css';
+/* Batch 8：字号缩放连带放大控件/行高（必须挨着 tokens 之后，两处都是 token 层） */
+@import './theme/font-scale.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================== 基础 reset ============================== */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-1);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    /*
+      正文默认可选中：名称 / 地址 / 状态 / 说明 / 日志 / 表格都要能拖蓝复制。
+      用户的原话是"所有显示字体都要能复制"，所以默认放开而不是逐个加 .rp-selectable。
+      只需要"点一下 / 拖一下"的操作件在下面单独收回禁止选择。
+    */
+    user-select: text;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-3);
+  }
+
+  ::selection {
+    background: var(--primary-30);
+  }
+
+  /* 可编辑控件与显式标记的正文保持可选中（链接文字也是正文，不在这里禁） */
+  input,
+  textarea,
+  [contenteditable],
+  .rp-selectable {
+    user-select: text;
+  }
+
+  /*
+    操作件禁止选择：按钮/标签页/菜单项/分隔条按下就要动作，
+    放开选择会让双击、拖动排序、拖拽分隔条被"拖蓝"抢走。
+    `a` 故意不在列表里——链接文字是正文，用户可能只是想复制地址文本。
+    连接卡片根节点也是 `role="button"`（整卡可聚焦/可回车打开），但它的
+    名称/地址/分组是用户要复制的正文，所以用 `data-card-root` 排除掉。
+  */
+  button,
+  [role='button']:not([data-card-root]),
+  [role='tab'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio'],
+  [role='separator'],
+  .rp-no-select,
+  [data-no-select] {
+    user-select: none;
+  }
+
+  /*
+    拖拽侧栏分隔条期间整页临时禁选（AppShell 挂 body.rp-dragging）：
+    指针会划过列表正文，而 `.rp-selectable` / input 已经显式写了 text，
+    只改 body 的 inline style 压不住它们，必须用 !important 覆盖整棵子树。
+  */
+  body.rp-dragging,
+  body.rp-dragging * {
+    user-select: none !important;
+  }
+
+  /*
+    统一键盘焦点环：组件内部不要再各写一套。
+    `[role='separator']` 是侧栏/列宽拖拽柄（tabIndex=0 的自定义控件），
+    不在原生控件列表里——漏掉它，键盘用户只能"听见"分隔条却看不见焦点（R6 #734）。
+  */
+  :where(
+      button,
+      [role='button'],
+      [role='menuitem'],
+      [role='menuitemradio'],
+      [role='separator'],
+      a,
+      input,
+      select,
+      textarea
+    ):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+}
+
+/* ============================ 滚动条美化 ============================ */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-3);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+/* ============================== 动画 ============================== */
+@keyframes rp-breath {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* 连接中：进度条必须**循环流动**。判定窗口最长 8s，一次性动画会让人以为卡死 */
+@keyframes rp-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes rp-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes rp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rp-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rp-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes rp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer utilities {
+  .rp-breath {
+    animation: rp-breath 1.4s ease-in-out infinite;
+  }
+  .rp-flow {
+    background-image: var(--gradient-brand);
+    background-size: 200% 100%;
+    animation: rp-flow 1.2s linear infinite;
+  }
+  .rp-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      var(--surface-2) 25%,
+      var(--border) 37%,
+      var(--surface-2) 63%
+    );
+    background-size: 200% 100%;
+    animation: rp-shimmer 1.4s ease-in-out infinite;
+  }
+  /* 无状态圆点时留位，避免卡片文字左右跳动 */
+  .rp-dot-slot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+  }
+
+  /*
+   * 设置行的几何规则全部在 theme/font-scale.css（R26 重写）：
+   * 行 = 标题行（标签 + 控件，垂直居中）+ 说明行；分节 = 自适应列数的栅格。
+   * 这里不再保留任何 .rp-setting-line / container-type 的历史规则。
+   */
+
+  /* 字号阶梯：与 tokens.css 的 --font-* 单一来源，组件不再散落 11/11.5/12.5 */
+  .rp-text-caption {
+    font-size: var(--font-caption);
+  }
+  .rp-text-body-s {
+    font-size: var(--font-body-s);
+  }
+  .rp-text-body {
+    font-size: var(--font-body);
+  }
+  .rp-text-body-l {
+    font-size: var(--font-body-l);
+  }
+  .rp-text-title {
+    font-size: var(--font-title);
+  }
+  .rp-text-display {
+    font-size: var(--font-display);
+  }
+
+  /* IP / 端口 / 延迟等数字等宽，纵向比对不抖 */
+  .rp-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* 统一过渡：时长/曲线来自 token，避免组件里各写 120/160/180ms */
+  .rp-transition {
+    transition-duration: var(--dur-base);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  /* 行高阶梯（与 --leading-* token 单一来源） */
+  .rp-leading-tight {
+    line-height: var(--leading-tight);
+  }
+  .rp-leading-snug {
+    line-height: var(--leading-snug);
+  }
+  .rp-leading-normal {
+    line-height: var(--leading-normal);
+  }
+  .rp-leading-relaxed {
+    line-height: var(--leading-relaxed);
+  }
+
+  /*
+   * 跳转链接：平时移出视口，Tab 聚焦时滑入左上角。
+   * 不用 sr-only/not-sr-only 组合：两者都改 position，focus:fixed 与 focus:not-sr-only
+   * 的生成顺序不保证，键盘用户可能看到一条 1px 宽的白条。
+   */
+  .rp-skip-link {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: var(--z-tooltip);
+    transform: translateY(calc(-100% - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--text-1);
+    padding: 8px 12px;
+    box-shadow: var(--elevation-3);
+    transition: transform var(--dur-base) var(--ease-decelerate);
+  }
+  .rp-skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* 单行截断 + 两行截断（名称用） */
+  .rp-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rp-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /*
+   * 卡片 / 列表行的焦点环。
+   *
+   * 为什么不用 `focus-visible:ring-*`（实色 primary）也不用全局那条 `:where(...)` 规则：
+   *  - ring 是 box-shadow，颜色是全色 primary，与全应用按钮/输入框的 `--focus-ring`
+   *    （现已改为不透明、≥3:1 的主题色）观感差一档，同一个键盘流里会出现"卡片很亮、按钮很淡"；
+   *  - 全局那条靠 `:where()` 降权到 0，会被 `outline-none` 之类的工具类覆盖（同为 0,1,0 时
+   *    按层序落败），不保证生效。
+   * 这里用 0,2,0 的显式选择器，与全局同色同宽：卡片外偏移 2px；行在表格里，内偏移避免压到相邻行。
+   */
+  .rp-focus-ring:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .rp-focus-ring-inset:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+  }
+
+  /*
+   * 24px 最小命中区（WCAG 2.5.8 / R6 #735）。
+   *
+   * 16px 级的图标按钮（卡片收藏星、复制、chip 上的关闭）视觉不能变大——变了整行
+   * 排版就得跟着重算——所以用伪元素往四周各扩 4px：热区 24×24，视觉 16×16。
+   * 伪元素属于按钮自己，点击落在扩出来的区域仍然触发同一个动作；
+   * 唯一代价是相邻按钮间距 <8px 时两块热区会重叠，此时应改用真实内边距。
+   */
+  .rp-hit-24 {
+    position: relative;
+  }
+  .rp-hit-24::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 24px);
+    height: max(100%, 24px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/*
+ * 前庭敏感用户降级（prefers-reduced-motion）与显式动效开关。
+ *
+ * 三档（useUiStore.motionPref → <html data-motion>）：
+ *  - system：跟随系统，prefers-reduced-motion: reduce 时降级；
+ *  - always：即使系统要求减少动效也照常播放（用户显式选择）；
+ *  - off：关闭一切装饰性动画与过渡。
+ *
+ * 只关**装饰性循环动画**和一次性位移动画，保留颜色/透明度变化：
+ * 连接中的进度条若彻底消失，用户会以为界面卡死，所以改成静态色块而不是删元素。
+ * rp-spin 保留——它是"正在工作"的唯一反馈，关掉比动更糟。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='always']) .rp-breath,
+  html:not([data-motion='always']) .rp-flow,
+  html:not([data-motion='always']) .rp-shimmer,
+  html:not([data-motion='always']) .rp-toast-in,
+  html:not([data-motion='always']) .rp-modal-in,
+  html:not([data-motion='always']) .rp-drawer-in {
+    animation: none !important;
+  }
+  html:not([data-motion='always']) .rp-flow {
+    background-image: none;
+    background-color: var(--primary);
+    opacity: 0.5;
+  }
+  html:not([data-motion='always']) .rp-shimmer {
+    background-image: none;
+    background-color: var(--surface-2);
+  }
+  /* 过渡压缩到几乎瞬时，但保留状态可辨识（不是 0s，避免某些浏览器跳过终态） */
+  html:not([data-motion='always']) *,
+  html:not([data-motion='always']) *::before,
+  html:not([data-motion='always']) *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-motion='off'] .rp-breath,
+html[data-motion='off'] .rp-flow,
+html[data-motion='off'] .rp-shimmer,
+html[data-motion='off'] .rp-toast-in,
+html[data-motion='off'] .rp-modal-in,
+html[data-motion='off'] .rp-drawer-in,
+html[data-motion='off'] [class*='animate-'] {
+  animation: none !important;
+}
+html[data-motion='off'] .rp-flow {
+  background-image: none;
+  background-color: var(--primary);
+  opacity: 0.5;
+}
+html[data-motion='off'] .rp-shimmer {
+  background-image: none;
+  background-color: var(--surface-2);
+}
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * 窄窗工具栏换行：44px 一行放不下时高度扩到 88px（两行控件，宽松密度也放得下）。
+ * ConnectionList 的表头 sticky top 与窗口化 inset 都读同一个变量/常量，
+ * 这里改一处，列表不会压在第二行控件下面。
+ */
+@media (max-width: 959px) {
+  :root {
+    --toolbar-h: 88px;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "click": { "text": "设置", "exact": true }
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "(() => { const ids = ['settings-visual-detail', 'settings-system', 'settings-session-advanced', 'settings-organization', 'settings-credentials', 'settings-monitor', 'settings-import-export', 'settings-reliability', 'settings-accessibility', 'settings-help']; const missing = ids.filter((id) => !document.querySelector('#' + id)); if (missing.length > 0) throw new Error('缺少设置分区: ' + missing.join(',')); const overflow = ids.map((id) => { const el = document.querySelector('#' + id); return { id, over: Math.max(0, el.scrollWidth - el.clientWidth) }; }).filter((item) => item.over > 1); if (overflow.length > 0) throw new Error('设置分区横向溢出: ' + JSON.stringify(overflow)); return { sections: ids.length, overflow: 0 }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/settings-batch2.png"
+    },
+    {
+      "eval": "(() => { const el = document.querySelector('#settings-accessibility'); el.scrollIntoView({ block: 'center' }); const before = parseFloat(getComputedStyle(document.documentElement).fontSize); const radio = [...el.querySelectorAll('[role=\"radio\"]')].find((node) => (node.innerText || '').includes('125%')); if (!radio) throw new Error('无障碍分节缺少 125% 字号选项'); radio.click(); return { before }; })()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "(() => { const after = parseFloat(getComputedStyle(document.documentElement).fontSize); const alt = parseFloat(getComputedStyle(document.body).fontSize); if (!(after > 15)) throw new Error('125% 字号未生效: root=' + after + ' body=' + alt); const el = document.querySelector('#settings-accessibility'); const radio = [...el.querySelectorAll('[role=\"radio\"]')].find((node) => (node.innerText || '').includes('100%')); if (!radio) throw new Error('缺少 100% 字号选项'); radio.click(); return { after, body: alt }; })()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "(() => { const root = parseFloat(getComputedStyle(document.documentElement).fontSize); if (Math.abs(root - 16) > 1) throw new Error('字号未恢复默认: ' + root); const el = document.querySelector('#settings-monitor'); el.scrollIntoView({ block: 'center' }); const text = el.innerText || ''; if (!text.includes('立即重测')) throw new Error('监控分节缺少「立即重测」: ' + text.slice(0, 160)); if (!el.querySelector('table')) throw new Error('监控分节缺少健康表格'); return { reset: true, monitorTable: true }; })()"
+    },
+    {
+      "click": { "text": "立即重测", "exact": true }
+    },
+    {
+      "wait": 5000
+    },
+    {
+      "eval": "(() => { const el = document.querySelector('#settings-monitor'); const text = el.innerText || ''; if (text.includes('检测中')) throw new Error('重测 5 秒后仍处于检测中'); const rows = el.querySelectorAll('tbody tr').length; if (rows < 4) throw new Error('健康表格行数不足: ' + rows); return { rows, rechecked: true }; })()"
+    }
+  ]
+}

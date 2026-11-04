@@ -1,0 +1,32 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "click": {
+        "text": "设置",
+        "exact": true
+      }
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(async () => { const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)); const deadline = Date.now() + 6000; let section = null; while (Date.now() < deadline) { section = document.getElementById('settings-session'); if (section) break; await sleep(100); } if (!section) throw new Error('设置页缺少 #settings-session 分节（会话窗口设置未落地）'); section.scrollIntoView({ block: 'start' }); await sleep(450); const sectionEl = () => { const el = document.getElementById('settings-session'); if (!el) throw new Error('#settings-session 在设置更新后被移除'); return el; }; const get = async () => { const res = await window.api.settings.get(); if (!res || !res.ok) throw new Error('settings.get 失败: ' + JSON.stringify(res)); return res.data; }; const switches = () => Array.from(sectionEl().querySelectorAll('[role=switch]')); const labels = () => switches().map((el) => (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\\s+/g, ' ').slice(0, 46)); const original = await get(); window.__qaSession = { get, switches, labels, original, sleep }; if (switches().length < 3) throw new Error('会话窗口分节开关不足 3 个: ' + labels().join(' | ')); const documentOverflow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth; if (documentOverflow > 1) throw new Error('设置页横向溢出 ' + documentOverflow + 'px'); return { switches: labels(), documentOverflow }; })()"
+    },
+    {
+      "eval": "(async () => { const qa = window.__qaSession; const before = await qa.get(); const labelOf = (el) => (el.getAttribute('aria-label') || el.innerText || ''); const targets = qa.switches().filter((el) => /标签显示/.test(labelOf(el))); if (targets.length < 4) throw new Error('标签信息开关应为 4 个，实际 ' + targets.length + '；分节开关: ' + qa.labels().join(' | ')); for (const el of targets) el.click(); await qa.sleep(300); let after = await qa.get(); const deadline = Date.now() + 4500; while (Date.now() < deadline) { const changed = Object.keys(after).filter((key) => /^sessionTab/.test(key) && JSON.stringify(before[key]) !== JSON.stringify(after[key])); if (changed.length === 4) break; await qa.sleep(120); after = await qa.get(); } const keys = Object.keys(after).filter((key) => before[key] !== after[key]); const bad = keys.filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]) && !/^sessionTab/.test(key)); const tabKeys = keys.filter((key) => /^sessionTab/.test(key)); if (tabKeys.length !== 4) throw new Error('切换 4 个标签信息开关后应持久化 4 个 sessionTab* 字段，实际改动: ' + JSON.stringify(keys)); if (bad.length > 0) throw new Error('切换标签信息时意外改动了其他字段: ' + bad.join(',')); return { changed: tabKeys, values: tabKeys.map((key) => key + '=' + after[key]) }; })()"
+    },
+    {
+      "eval": "(async () => { const qa = window.__qaSession; const before = await qa.get(); const target = qa.switches().find((el) => /自动重连/.test(el.getAttribute('aria-label') || el.innerText || '')); if (!target) throw new Error('找不到「断线后自动重连」开关；分节开关: ' + qa.labels().join(' | ')); target.click(); await qa.sleep(350); let after = await qa.get(); const deadline = Date.now() + 4500; while (Date.now() < deadline && before.autoReconnect === after.autoReconnect) { await qa.sleep(120); after = await qa.get(); } if (before.autoReconnect === after.autoReconnect) throw new Error('autoReconnect 未持久化，仍为 ' + after.autoReconnect); const keys = Object.keys(after).filter((key) => before[key] !== after[key]); const bad = keys.filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]) && key !== 'autoReconnect'); if (bad.length > 0) throw new Error('切换自动重连时意外改动了其他字段: ' + bad.join(',')); return { autoReconnect: after.autoReconnect, changed: keys }; })()"
+    },
+    {
+      "eval": "(async () => { const qa = window.__qaSession; const before = await qa.get(); const target = qa.switches().find((el) => /记住会话窗口位置|窗口位置/.test(el.getAttribute('aria-label') || el.innerText || '')); if (!target) throw new Error('找不到「记住会话窗口位置」开关；分节开关: ' + qa.labels().join(' | ')); target.click(); await qa.sleep(350); let after = await qa.get(); const deadline = Date.now() + 4500; while (Date.now() < deadline && before.sessionWindowMemory === after.sessionWindowMemory) { await qa.sleep(120); after = await qa.get(); } if (before.sessionWindowMemory === after.sessionWindowMemory) throw new Error('sessionWindowMemory 未持久化，仍为 ' + after.sessionWindowMemory); const keys = Object.keys(after).filter((key) => before[key] !== after[key]); const bad = keys.filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]) && key !== 'sessionWindowMemory'); if (bad.length > 0) throw new Error('切换窗口位置记忆时意外改动了其他字段: ' + bad.join(',')); return { sessionWindowMemory: after.sessionWindowMemory, changed: keys }; })()"
+    },
+    {
+      "eval": "(async () => { const qa = window.__qaSession; const current = await qa.get(); const patch = {}; for (const key of ['sessionTabLatency', 'sessionTabDuration', 'sessionTabHost', 'sessionTabStateText', 'autoReconnect', 'sessionWindowMemory']) { if (current[key] !== qa.original[key]) patch[key] = qa.original[key]; } if (Object.keys(patch).length > 0) { const res = await window.api.settings.update(patch); if (!res || !res.ok) throw new Error('恢复会话设置失败: ' + JSON.stringify(res)); await qa.sleep(300); } const restored = await qa.get(); const diff = Object.keys(patch).filter((key) => restored[key] !== patch[key]); if (diff.length > 0) throw new Error('会话设置未恢复到初始值: ' + diff.join(',')); return { restored: Object.keys(patch) }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/settings-session-tabs.png"
+    }
+  ]
+}

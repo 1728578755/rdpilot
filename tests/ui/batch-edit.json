@@ -1,0 +1,30 @@
+{
+  "wait": 3500,
+  "steps": [
+    { "click": "[data-row-index=\"0\"]" },
+    { "wait": 250 },
+    { "click": "[data-row-index=\"1\"]", "modifiers": ["ctrl"] },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const bar = document.querySelector('[role=toolbar]'); if (!bar) throw new Error('选中 2 行后批量操作条未出现'); if (!(bar.innerText || '').includes('已选 2 项')) throw new Error('批量条文案不是「已选 2 项」: ' + (bar.innerText || '').slice(0, 80)); const edit = Array.from(bar.querySelectorAll('button')).find((el) => (el.textContent || '').trim() === '编辑'); if (!edit) throw new Error('批量条缺少「编辑」按钮；现有按钮: ' + Array.from(bar.querySelectorAll('button')).map((el) => (el.textContent || '').trim()).join(' | ')); edit.click(); return { bar: true, clicked: '编辑' }; })()"
+    },
+    { "wait": 700 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (!dialog) throw new Error('批量编辑对话框未打开（SelectionBar 的编辑按钮可能尚未接线）'); const text = dialog.innerText || ''; if (!text.includes('批量编辑')) throw new Error('对话框标题不是批量编辑: ' + text.slice(0, 120)); if (!text.includes('已选择 2 台主机')) throw new Error('对话框未显示「已选择 2 台主机」: ' + text.slice(0, 160)); const input = Array.from(dialog.querySelectorAll('input[placeholder]')).find((el) => (el.getAttribute('placeholder') || '').includes('输入新标签')); if (!input) throw new Error('找不到批量添加标签输入框；现有输入: ' + Array.from(dialog.querySelectorAll('input')).map((el) => el.getAttribute('placeholder') || el.type).join(' | ')); return { opened: true, subtitle: '已选择 2 台主机', tagInput: input.placeholder }; })()"
+    },
+    { "click": { "placeholder": "输入新标签后按回车" } },
+    { "wait": 150 },
+    { "type": "BATCH-QA" },
+    { "press": "Enter" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (!dialog) throw new Error('输入标签后批量编辑对话框被关闭'); const text = dialog.innerText || ''; if (!text.includes('BATCH-QA')) throw new Error('批量编辑摘要里没有新标签 BATCH-QA: ' + text.slice(0, 240)); const apply = Array.from(dialog.querySelectorAll('button')).find((el) => (el.textContent || '').trim() === '应用修改'); if (!apply) throw new Error('找不到「应用修改」按钮'); if (apply.disabled) throw new Error('添加标签后「应用修改」仍禁用'); return { summaryHasTag: true, applyEnabled: true }; })()"
+    },
+    { "click": { "text": "应用修改", "exact": true } },
+    { "wait": 1100 },
+    {
+      "eval": "(async () => { if (document.querySelector('[role=dialog][aria-modal=true]')) throw new Error('应用后批量编辑对话框未关闭'); const res = await window.api.connections.list(); if (!res.ok) throw new Error('connections.list 失败'); const byId = new Map(res.data.map((item) => [item.id, item])); for (const id of ['ui-seed-01', 'ui-seed-02']) { const conn = byId.get(id); if (!conn) throw new Error('找不到连接 ' + id); if (!Array.isArray(conn.tags) || !conn.tags.includes('BATCH-QA')) throw new Error(id + ' 缺少批量标签 BATCH-QA，实际: ' + JSON.stringify(conn.tags)); } for (const id of ['ui-seed-03', 'ui-seed-04']) { const conn = byId.get(id); if (conn && Array.isArray(conn.tags) && conn.tags.includes('BATCH-QA')) throw new Error(id + ' 不应被批量修改'); } return { updated: ['ui-seed-01', 'ui-seed-02'] }; })()"
+    },
+    { "shot": ".tmp/ui-shots/batch-edit.png" }
+  ]
+}

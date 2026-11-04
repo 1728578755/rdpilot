@@ -1,0 +1,30 @@
+{
+  "wait": 3600,
+  "steps": [
+    {
+      "eval": "(async () => { const r = await window.api.batchWindow.open({ source: { kind: 'all' }, title: '全部主机' }); if (!r.ok) throw new Error('打开批量面板失败: ' + r.error.message); return 'opened' })()"
+    },
+    { "wait": 2600 },
+    { "page": "batch.html" },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const bar = document.querySelector('[data-batch-toolbar=\"true\"]'); if (!bar) throw new Error('矩阵窗口缺少工具栏'); const all = document.querySelector('[data-batch-connect-all=\"true\"] button'); if (!all) throw new Error('工具栏缺少「连接全部」按钮；现有按钮: ' + [...bar.querySelectorAll('button')].map((b) => (b.innerText || '').trim()).join(' | ')); if (!/连接全部/.test(all.innerText)) throw new Error('主按钮文案不是「连接全部」: ' + all.innerText); if (!/\\(\\d+\\)/.test(all.innerText)) throw new Error('「连接全部」没带台数: ' + all.innerText); const sel = document.querySelector('[data-batch-connect-selected=\"true\"] button'); if (!sel) throw new Error('工具栏缺少「连接选中」按钮'); return { all: all.innerText.replace(/\\s+/g, ' '), selected: sel.innerText.replace(/\\s+/g, ' ') } })()"
+    },
+    {
+      "eval": "(() => { const boxes = [...document.querySelectorAll('input[type=checkbox]')]; if (boxes.length > 0) throw new Error('批量面板里仍有复选框: ' + boxes.length + ' 个'); const tiles = [...document.querySelectorAll('[data-batch-tile]')]; if (tiles.length === 0) throw new Error('矩阵里没有主机格子'); const square = [...document.querySelectorAll('[data-batch-tile] *')].find((el) => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); const bw = parseFloat(cs.borderTopWidth) || 0; return r.width >= 13 && r.width <= 17 && Math.abs(r.height - r.width) <= 1 && bw > 0 }); if (square) throw new Error('格子里仍有 14-16px 方框: ' + square.outerHTML.slice(0, 120)); return { tiles: tiles.length, checkboxes: 0, squares: 0 } })()"
+    },
+    { "click": "[data-batch-tile]" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const probe = document.createElement('span'); probe.style.color = 'var(--primary)'; document.body.appendChild(probe); const primary = getComputedStyle(probe).color; probe.remove(); const tiles = [...document.querySelectorAll('[data-batch-tile]')]; const chosen = tiles.find((el) => el.getAttribute('data-batch-selected') === 'true'); if (!chosen) throw new Error('单击后没有格子进入选中态（data-batch-selected 缺失）'); const cs = getComputedStyle(chosen); if (cs.borderTopColor !== primary) throw new Error('选中格边框不是主色: ' + cs.borderTopColor + ' ≠ ' + primary); const bar = chosen.querySelector('[data-batch-selected-bar=\"true\"]'); if (!bar) throw new Error('选中格缺少左侧主色竖条'); const barW = Math.round(bar.getBoundingClientRect().width); if (barW !== 3) throw new Error('选中竖条宽度不是 3px: ' + barW); const plain = tiles.find((el) => el !== chosen); const plainBg = plain ? getComputedStyle(plain).backgroundColor : null; if (plainBg !== null && plainBg === cs.backgroundColor) throw new Error('选中格没有 6% 主色底（与未选中格同色）: ' + cs.backgroundColor); const box = [...chosen.querySelectorAll('*')].find((el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); const bw = parseFloat(s.borderTopWidth) || 0; return r.width >= 13 && r.width <= 17 && Math.abs(r.height - r.width) <= 1 && bw > 0 }); if (box) throw new Error('选中格仍画出方框: ' + box.outerHTML.slice(0, 120)); const text = document.querySelector('[data-batch-actions=\"true\"]').innerText.replace(/\\s+/g, ' '); if (!/已选 1 台/.test(text)) throw new Error('动作行没有显示「已选 1 台」: ' + text.slice(0, 80)); return { border: cs.borderTopColor, bar: barW, selected: 1 } })()"
+    },
+    { "shot": ".tmp/b6-batch/selected.png" },
+    {
+      "eval": "(() => { const ev = new MouseEvent('mousedown', { bubbles: true, clientX: 4, clientY: 300 }); document.querySelector('[data-batch-tile]').parentElement.parentElement.dispatchEvent(ev); return true })()"
+    },
+    { "wait": 250 },
+    {
+      "eval": "(() => { const chosen = document.querySelector('[data-batch-tile][data-batch-selected=\"true\"]'); if (chosen) throw new Error('空白处 mousedown 后选择没有清空'); return { cleared: true } })()"
+    }
+  ]
+}

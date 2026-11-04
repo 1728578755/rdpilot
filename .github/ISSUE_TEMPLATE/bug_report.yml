@@ -1,0 +1,63 @@
+name: Bug 报告
+description: 报告一个可复现的问题
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        安全问题请不要开公开 issue，按 [SECURITY.md](../blob/main/SECURITY.md) 的渠道私下报告。
+  - type: input
+    id: version
+    attributes:
+      label: RDPilot 版本
+      description: 设置 → 关于，或 package.json 的 version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows 版本
+      placeholder: Windows 11 23H2 x64
+    validations:
+      required: true
+  - type: dropdown
+    id: executor
+    attributes:
+      label: 执行器
+      options:
+        - 内置 RdpHost
+        - 系统 mstsc
+        - FreeRDP
+        - 与执行器无关
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 日志在 `%APPDATA%\rdpilot\logs\main.log`。提交前请删除主机名、用户名与密码。
+      render: text
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我已移除日志中的真实主机名、用户名与密码
+          required: true

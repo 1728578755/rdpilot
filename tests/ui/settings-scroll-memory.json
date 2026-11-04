@@ -1,0 +1,21 @@
+{
+  "wait": 2200,
+  "steps": [
+    { "click": { "text": "设置" } },
+    { "wait": 2800 },
+    {
+      "eval": "(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const root = document.querySelector('[data-scroll-root=\"true\"]'); if (!root) throw new Error('缺少滚动容器'); root.scrollTop = 1800; await sleep(500); const saved = Math.round(root.scrollTop); if (Math.abs(saved - 1800) > 4) throw new Error('设置页滚不到 1800：' + saved); return { saved }; })()"
+    },
+    { "click": { "text": "全部主机" } },
+    { "wait": 1000 },
+    {
+      "eval": "(() => { const root = document.querySelector('[data-scroll-root=\"true\"]'); const onList = Boolean(document.querySelector('[role=\"grid\"]')) || Boolean(document.querySelector('[data-conn-card]')); if (!onList) throw new Error('没有切回连接列表'); return { left: true, top: Math.round(root.scrollTop) }; })()"
+    },
+    { "click": { "text": "设置" } },
+    { "wait": 2000 },
+    {
+      "eval": "(() => { const root = document.querySelector('[data-scroll-root=\"true\"]'); const top = Math.round(root.scrollTop); if (Math.abs(top - 1800) > 8) throw new Error('返回设置后没有回到上次位置：' + top + '（期望 1800）'); return { restored: top }; })()"
+    },
+    { "shot": ".tmp/ui-shots/settings-scroll-memory.png" }
+  ]
+}

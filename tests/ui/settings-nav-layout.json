@@ -1,0 +1,62 @@
+{
+  "wait": 3500,
+  "steps": [
+    { "click": { "text": "设置", "exact": true } },
+    { "wait": 2400 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const box = document.querySelector('[data-settings-nav-width]'); const content = document.querySelector('[data-settings-content=\"true\"]'); const root = document.querySelector('[data-scroll-root=\"true\"]'); const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); if (!nav || !box || !content || !handle) throw new Error('缺少左栏/宽度容器/内容列/拖拽把手'); const w = Number(box.dataset.settingsNavWidth); if (Math.abs(w - 156) > 2) throw new Error('左栏默认宽度应为 156±2，实际 ' + w); const nb = nav.getBoundingClientRect(); if (Math.abs(nb.width - w) > 1) throw new Error('data-settings-nav-width 与 nav 实测宽度不一致: ' + w + ' vs ' + nb.width); if (handle.getAttribute('role') !== 'separator' || handle.getAttribute('aria-orientation') !== 'vertical') throw new Error('把手缺少 separator 垂直语义'); if (!handle.getAttribute('aria-label')) throw new Error('把手缺少 aria-label'); if (handle.tabIndex !== 0) throw new Error('把手不可键盘聚焦'); const hb = handle.getBoundingClientRect(); if (hb.width < 5 || hb.width > 8) throw new Error('把手热区应约 6px，实际 ' + hb.width); if (hb.left < nb.right - 0.5) throw new Error('把手指压住了导航滚动条（应在右缘之外）'); if (root.scrollWidth - root.clientWidth > 0) throw new Error('设置页出现横向滚动: ' + (root.scrollWidth - root.clientWidth)); const items = [...nav.querySelectorAll('button[data-settings-nav=\"true\"]')]; if (items.length !== 20) throw new Error('分节项应为 20，实际 ' + items.length); const rows = items.map((el) => { const span = el.firstElementChild; const b = el.getBoundingClientRect(); const s = span.getBoundingClientRect(); const cs = getComputedStyle(el); const lh = parseFloat(cs.lineHeight); const fs = parseFloat(cs.fontSize); return { text: (el.textContent || '').trim(), h: b.height, top: s.top - b.top, bottom: b.bottom - s.bottom, ratio: lh / fs, lines: Math.round(s.height / lh) }; }); const offCenter = rows.filter((r) => Math.abs(r.top - r.bottom) > 1); if (offCenter.length) throw new Error('选中/普通项文字未垂直居中（上下留白差 >1px）: ' + JSON.stringify(offCenter.slice(0, 3).map((r) => ({ t: r.text, top: r.top, bottom: r.bottom })))); const tight = rows.filter((r) => r.ratio < 1.4); if (tight.length) throw new Error('导航项行高小于 1.4: ' + JSON.stringify(tight.slice(0, 3).map((r) => ({ t: r.text, ratio: r.ratio })))); const twoLine = rows.filter((r) => r.lines > 1); const badTwo = twoLine.filter((r) => r.h < 2 * 18); if (badTwo.length) throw new Error('两行项高度不足以容纳两行: ' + JSON.stringify(badTwo)); const gaps = []; for (let i = 1; i < items.length; i += 1) { const prev = items[i - 1].getBoundingClientRect(); const cur = items[i].getBoundingClientRect(); if (items[i - 1].closest('[data-settings-category]') === items[i].closest('[data-settings-category]')) gaps.push(+(cur.top - prev.bottom).toFixed(1)); } if (gaps.some((g) => g < 3)) throw new Error('同组导航项间距应 ≥4px，实测 ' + JSON.stringify(gaps)); const groups = [...nav.querySelectorAll('[data-settings-category]')]; const groupGaps = []; for (let i = 1; i < groups.length; i += 1) groupGaps.push(+(groups[i].getBoundingClientRect().top - groups[i - 1].getBoundingClientRect().bottom).toFixed(1)); if (groupGaps.some((g) => g < 8)) throw new Error('分类组间距应 ≥8px，实测 ' + JSON.stringify(groupGaps)); const catH = [...nav.querySelectorAll('[data-settings-category-toggle=\"true\"]')].map((el) => el.getBoundingClientRect().height); if (Math.min(...catH) < 26 || Math.max(...catH) > 30) throw new Error('分类标题高度应落在 26–30，实测 ' + catH.join('/')); return { navWidth: w, navW: +nb.width.toFixed(1), contentW: +content.getBoundingClientRect().width.toFixed(1), handleW: +hb.width.toFixed(1), handleGap: +(hb.left - nb.right).toFixed(1), itemGaps: gaps.slice(0, 3), groupGaps, catH: catH[0], leadingRatio: rows[0].ratio, twoLine: twoLine.length, centered: rows.length }; })()"
+    },
+    {
+      "eval": "(() => { const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); const r = handle.getBoundingClientRect(); const opts = { bubbles: true, cancelable: true, pointerId: 3, pointerType: 'mouse', clientX: r.left + 3, clientY: r.top + 60 }; handle.dispatchEvent(new PointerEvent('pointerdown', opts)); window.dispatchEvent(new PointerEvent('pointermove', { ...opts, clientX: r.left + 3 + 92 })); window.dispatchEvent(new PointerEvent('pointerup', { ...opts, clientX: r.left + 3 + 92 })); return { dispatched: true }; })()"
+    },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const box = document.querySelector('[data-settings-nav-width]'); const content = document.querySelector('[data-settings-content=\"true\"]'); const root = document.querySelector('[data-scroll-root=\"true\"]'); const w = Number(box.dataset.settingsNavWidth); if (Math.abs(w - 248) > 2) throw new Error('拖拽 +92 后宽度应为 248±2，实际 ' + w); const stored = window.localStorage.getItem('rdpilot.settings.navWidth.v3'); if (Number(stored) !== w) throw new Error('宽度未持久化到 localStorage: ' + stored + ' vs ' + w); if (Math.abs(nav.getBoundingClientRect().width - w) > 1) throw new Error('nav 实际宽度未跟随'); if (content.getBoundingClientRect().width > 921) throw new Error('内容列未随左栏变宽而收缩: ' + content.getBoundingClientRect().width); if (root.scrollWidth - root.clientWidth > 0) throw new Error('拖宽后出现横向溢出'); const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); if (handle.getBoundingClientRect().left < nav.getBoundingClientRect().right - 0.5) throw new Error('拖宽后把手与滚动条重叠'); return { width: w, stored: Number(stored), contentW: +content.getBoundingClientRect().width.toFixed(1), overflow: root.scrollWidth - root.clientWidth }; })()"
+    },
+    {
+      "eval": "(() => { const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); const key = (k) => handle.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); handle.focus(); key('ArrowLeft'); key('ArrowLeft'); return { afterTwoLeft: document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth }; })()"
+    },
+    { "wait": 250 },
+    {
+      "eval": "(() => { const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); const attr = () => document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth; const a = Number(attr()); if (Math.abs(a - 232) > 2) throw new Error('← 两次应减 16（248→232），实际 ' + a); handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })); return { at264: a, ariaNow: handle.getAttribute('aria-valuenow') }; })()"
+    },
+    { "wait": 250 },
+    {
+      "eval": "(() => { const w = Number(document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth); if (Math.abs(w - 156) > 2) throw new Error('Home 应恢复默认 156，实际 ' + w); const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); handle.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); return { afterHome: w }; })()"
+    },
+    { "wait": 200 },
+    {
+      "eval": "(() => { const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); const key = (k) => handle.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); for (let i = 0; i < 6; i += 1) key('ArrowLeft'); return { at: document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth }; })()"
+    },
+    { "wait": 300 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const w = Number(document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth); if (Math.abs(w - 120) > 2) throw new Error('连续 ← 应夹到下限 120，实际 ' + w); const items = [...nav.querySelectorAll('button[data-settings-nav=\"true\"]')]; if (nav.scrollWidth - nav.clientWidth > 0) throw new Error('最窄宽度下导航出现横向溢出'); const rows = items.map((el) => { const span = el.firstElementChild; const b = el.getBoundingClientRect(); const s = span.getBoundingClientRect(); const lh = parseFloat(getComputedStyle(el).lineHeight); return { text: (el.textContent || '').trim(), top: s.top - b.top, bottom: b.bottom - s.bottom, ratio: lh / parseFloat(getComputedStyle(el).fontSize), lines: Math.round(s.height / lh), clipped: span.scrollHeight > span.clientHeight + 1 }; }); const off = rows.filter((r) => Math.abs(r.top - r.bottom) > 1); if (off.length) throw new Error('最窄宽度下仍有未居中的项: ' + JSON.stringify(off.slice(0, 3))); const tight = rows.filter((r) => r.ratio < 1.4); if (tight.length) throw new Error('最窄宽度下行高不足 1.4: ' + JSON.stringify(tight.slice(0, 3))); const clipped = rows.filter((r) => r.clipped); if (clipped.length) throw new Error('分节名超过两行被截断: ' + JSON.stringify(clipped.map((r) => r.text))); return { width: w, maxLines: Math.max(...rows.map((r) => r.lines)), centered: rows.length }; })()"
+    },
+    {
+      "eval": "(() => { const handle = document.querySelector('[data-settings-nav-resize=\"true\"]'); handle.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); const nav = document.querySelector('[data-settings-index=\"true\"]'); nav.scrollTop = 200; const before = nav.scrollTop; const cat = nav.querySelector('[data-settings-category=\"frequent\"] [data-settings-category-toggle=\"true\"]'); cat.click(); return { before, heightBefore: nav.scrollHeight }; })()"
+    },
+    { "wait": 200 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); return { early: nav.scrollTop, max: nav.scrollHeight - nav.clientHeight }; })()"
+    },
+    { "wait": 900 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const after = nav.scrollTop; const max = nav.scrollHeight - nav.clientHeight; if (max > 0 && after <= 0) throw new Error('收起分类后导航跳回顶部（scrollTop=0，新上限 ' + max + '）'); const cat = nav.querySelector('[data-settings-category=\"frequent\"] [data-settings-category-toggle=\"true\"]'); if (cat.getAttribute('aria-expanded') !== 'false') throw new Error('分类未收起'); cat.click(); return { afterCollapse: after, max }; })()"
+    },
+    { "wait": 950 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const afterExpand = nav.scrollTop; const ids = [...nav.querySelectorAll('button[data-settings-nav=\"true\"]')].filter((el) => el.offsetParent !== null).length; if (ids !== 20) throw new Error('展开后分节项应为 20，实际 ' + ids); if (nav.scrollTop < 0) throw new Error('展开后 scrollTop 非法'); return { afterExpand }; })()"
+    },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); nav.scrollTop = 200; const before = nav.scrollTop; const maxBefore = nav.scrollHeight - nav.clientHeight; const cat = nav.querySelector('[data-settings-category=\"help\"] [data-settings-category-toggle=\"true\"]'); cat.click(); return { before, maxBefore }; })()"
+    },
+    { "wait": 950 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const after = nav.scrollTop; const max = nav.scrollHeight - nav.clientHeight; const expected = Math.min(200, max); if (Math.abs(after - expected) > 2) throw new Error('收起「帮助」后 scrollTop 应等于 min(原值, 新上限)=' + expected + '，实际 ' + after); const cat = nav.querySelector('[data-settings-category=\"help\"] [data-settings-category-toggle=\"true\"]'); cat.click(); return { afterCollapse: after, max, expected }; })()"
+    },
+    { "wait": 950 },
+    {
+      "eval": "(() => { const nav = document.querySelector('[data-settings-index=\"true\"]'); const root = document.querySelector('[data-scroll-root=\"true\"]'); if (root.scrollWidth - root.clientWidth > 0) throw new Error('收尾后出现横向溢出'); return { scrollTop: nav.scrollTop, width: document.querySelector('[data-settings-nav-width]').dataset.settingsNavWidth, overflow: root.scrollWidth - root.clientWidth }; })()"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "click": {
+        "text": "设置",
+        "exact": true
+      }
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "eval": "(() => { const dlg = document.querySelector('[role=\"dialog\"]'); if (dlg) { const btn = [...dlg.querySelectorAll('button')].find((b) => ['稍后','Later'].includes((b.textContent||'').trim())); if (btn) btn.click(); } const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-list-columns\"]'); if (nav) nav.click(); else { const root = document.querySelector('[data-scroll-root=\"true\"]'); const sec = document.getElementById('settings-list-columns'); if (sec && root) root.scrollTop = sec.offsetTop - 8; } return true; })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const content = document.querySelector('[data-settings-content=\"true\"]'); const cr = content.getBoundingClientRect(); const cols = [...content.querySelectorAll('[data-column-row]')]; if (cols.length === 0) throw new Error('缺少列表列管理行'); const toggleOf = (row) => row.matches('[role=\"checkbox\"]') ? row : row.querySelector('[role=\"checkbox\"]'); const toggles = cols.map(toggleOf); if (toggles.some((el) => !el)) throw new Error('列管理行缺少 role=checkbox 的整行切换'); const small = toggles.filter((el) => el.getBoundingClientRect().width < 60); if (small.length > 0) throw new Error('列管理行仍有小方块式勾选体: ' + small.length + ' 个，宽度 ' + Math.round(small[0].getBoundingClientRect().width)); const on = cols.filter((row) => toggleOf(row).getAttribute('aria-checked') === 'true'); const tinted = on.filter((row) => { const bg = getComputedStyle(row).backgroundColor; return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' }); if (on.length > 0 && tinted.length !== on.length) throw new Error('选中的列行没有整行着色: ' + tinted.length + '/' + on.length); const bar = on.length > 0 ? on[0].querySelector('span[aria-hidden=\"true\"]') : null; const barW = bar ? Math.round(bar.getBoundingClientRect().width) : null; if (on.length > 0 && barW !== 3) throw new Error('选中行左侧竖条宽度不是 3px: ' + barW); const nameOf = (row) => row.querySelector('span[title]'); const onName = on.length > 0 ? getComputedStyle(nameOf(on[0])).color : null; const offRow = cols.find((row) => toggleOf(row).getAttribute('aria-checked') !== 'true'); if (on.length > 0 && offRow && onName === getComputedStyle(nameOf(offRow)).color) throw new Error('选中列的主色文字与未选行相同，选中态不明显'); const maxColRight = Math.max(...cols.map((el) => el.getBoundingClientRect().right)); if (maxColRight > cr.right + 1) throw new Error('列管理行溢出卡片: ' + Math.round(maxColRight) + ' vs ' + Math.round(cr.right)); const _pr = parseFloat(getComputedStyle(cols[0].parentElement).paddingRight) || 0; if (cols[0].parentElement.getBoundingClientRect().right - _pr - maxColRight > 1) throw new Error('列管理行没有铺满容器右缘: ' + Math.round(maxColRight) + ' vs ' + Math.round(cols[0].parentElement.getBoundingClientRect().right)); const heights = cols.map((row) => Math.round(row.getBoundingClientRect().height)); const spread = Math.max(...heights) - Math.min(...heights); if (spread > 1) throw new Error('列管理行高不一致: ' + spread + 'px ' + JSON.stringify(heights)); return { columnRows: cols.length, checkedRows: on.length, tintedRows: tinted.length, barWidth: barW, rowHeightSpread: spread, smallestToggleWidth: Math.min(...toggles.map((el) => Math.round(el.getBoundingClientRect().width))) }; })()"
+    },
+    {
+      "eval": "(async () => { const rows = [...document.querySelectorAll('[data-column-row]')]; const first = rows[0]; const toggle = first.matches('[role=\"checkbox\"]') ? first : first.querySelector('[role=\"checkbox\"]'); const read = () => first.getAttribute('aria-checked'); const before = read(); toggle.click(); await new Promise((r) => setTimeout(r, 120)); const after = read(); if (before === after) throw new Error('点击列行没有切换 aria-checked: ' + before + ' -> ' + after); const tintedNow = getComputedStyle(first).backgroundColor; toggle.click(); await new Promise((r) => setTimeout(r, 120)); if (read() !== before) throw new Error('二次点击没有切回'); return { before, after, tintedNow }; })()"
+    },
+    {
+      "eval": "(() => { const content = document.querySelector('[data-settings-content=\"true\"]'); const boxes = content.querySelectorAll('input[type=\"checkbox\"]').length; const isSquare = (el) => { const r = el.getBoundingClientRect(); if (!(r.width >= 12 && r.width <= 18 && Math.abs(r.width - r.height) <= 1)) return false; const cs = getComputedStyle(el); const radius = parseFloat(cs.borderTopLeftRadius) || 0; if (radius >= r.width / 2 - 0.5) return false; return true; }; const checkboxLike = [...content.querySelectorAll('[role=\"checkbox\"], [aria-checked], button')].filter((el) => isSquare(el)); const tinyToggles = [...content.querySelectorAll('[role=\"checkbox\"]')].filter((el) => el.getBoundingClientRect().width < 60); if (boxes > 0) throw new Error('设置页仍有原生复选框: ' + boxes); if (checkboxLike.length > 0) throw new Error('设置页仍有 12–18px 方形勾选体: ' + checkboxLike.length + ' 个，首个 ' + checkboxLike[0].tagName + '.' + String(checkboxLike[0].className).slice(0, 40)); if (tinyToggles.length > 0) throw new Error('仍有小号 role=checkbox 开关: ' + tinyToggles.length); const switches = [...content.querySelectorAll('button[role=\"switch\"]')].length; return { nativeCheckboxes: boxes, squareVisuals: checkboxLike.length, tinyToggles: tinyToggles.length, switches }; })()"
+    },
+    {
+      "eval": "(() => { const rows = [...document.querySelectorAll('[data-settings-content=\"true\"] [data-setting-row]')]; const exportRow = rows.find((row) => { const label = row.querySelector('[data-setting-label=\"true\"]'); return label && (label.textContent || '').trim().includes('导出配置'); }); if (!exportRow) throw new Error('没有找到「导出配置」行'); const hintEl = exportRow.querySelector('[data-setting-hint=\"true\"]'); const hint = hintEl ? (hintEl.textContent || '').trim() : ''; if (!hint) throw new Error('导出配置行没有说明文案'); if (hint.includes('不含密码')) throw new Error('导出说明仍是过期文案: ' + hint); if (!hint.includes('包含密码')) throw new Error('导出说明没有提到可选包含密码: ' + hint); if (!hint.includes('加密')) throw new Error('导出说明没有提到加密: ' + hint); return { exportHint: hint }; })()"
+    },
+    {
+      "eval": "(() => { const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-about\"]'); if (!nav) throw new Error('左侧导航缺少「关于」项'); nav.click(); return true; })()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const input = document.querySelector('#settings-about-mstsc input'); if (!input) throw new Error('关于分节缺少 mstsc 路径输入框'); const initial = input.value; if (!initial) throw new Error('mstsc 路径初始没有回填'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); return { initial, cleared: input.value }; })()"
+    },
+    {
+      "eval": "(() => { const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-appearance\"]'); if (!nav) throw new Error('左侧导航缺少「外观」项'); nav.click(); return true; })()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "(() => { const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-about\"]'); if (!nav) throw new Error('左侧导航缺少「关于」项'); nav.click(); return true; })()"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "(() => { const input = document.querySelector('#settings-about-mstsc input'); if (!input) throw new Error('回到关于分节后找不到 mstsc 输入框'); if (input.value !== '') throw new Error('清空后的 mstsc 路径又被回填: ' + input.value); return { afterReturn: input.value }; })()"
+    },
+    {
+      "eval": "(() => { const row = document.querySelector('#settings-about-mstsc'); const btn = [...row.querySelectorAll('button')].find((b) => (b.textContent || '').trim() === '恢复默认'); if (!btn) throw new Error('找不到「恢复默认」按钮'); if (btn.disabled) throw new Error('清空后「恢复默认」按钮被禁用'); btn.click(); return true; })()"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "(() => { const input = document.querySelector('#settings-about-mstsc input'); const value = input.value; if (!/mstsc\\.exe$/i.test(value)) throw new Error('恢复默认没有把默认 mstsc 路径填回: ' + value); return { restored: value }; })()"
+    }
+  ]
+}

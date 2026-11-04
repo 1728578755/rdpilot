@@ -1,0 +1,20 @@
+{
+  "wait": 3500,
+  "steps": [
+    { "clickText": "设置" },
+    { "wait": 500 },
+    { "eval": "(() => { const section = document.querySelector('#settings-connection'); if (!section) throw new Error('找不到连接与会话分节'); section.scrollIntoView({ block: 'start' }); return { sections: document.querySelectorAll('section[id^=\"settings-\"]').length }; })()" },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const group=document.querySelector('[data-testid=\"engine-radiogroup\"]'); if(!group) throw new Error('找不到协议程序选择组'); const cards=[...group.querySelectorAll('[role=\"radio\"]')]; if(cards.length!==4) throw new Error('执行器卡片应为 4 个，实际 '+cards.length); const text=group.innerText; if(!text.includes('内置 RdpHost')||!text.includes('系统 mstsc')||!text.includes('FreeRDP')||!text.includes('内嵌主窗口')) throw new Error('执行器卡片文案不全: '+text.slice(0,120)); const selected=cards.filter(c=>c.getAttribute('aria-checked')==='true'); if(selected.length!==1) throw new Error('应恰好一个选中，实际 '+selected.length); if(cards[3].disabled!==true) throw new Error('B2 卡片应禁用'); const overflow=Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth; if(overflow>1) throw new Error('文档横向溢出 '+overflow); return { cards: cards.length, selected: selected[0].innerText.trim().slice(0,20), freerdpDisabled: cards[2].disabled, b2Disabled: cards[3].disabled, overflow }; })()"
+    },
+    {
+      "click": "[data-testid=\"engine-radiogroup\"] [role=\"radio\"]:nth-child(2)"
+    },
+    { "wait": 600 },
+    {
+      "eval": "(async () => { const cards=[...document.querySelectorAll('[data-testid=\"engine-radiogroup\"] [role=\"radio\"]')]; const selected=cards.filter(c=>c.getAttribute('aria-checked')==='true'); if(selected.length!==1) throw new Error('切换后选中数不符: '+selected.length); if(!selected[0].innerText.includes('系统 mstsc')) throw new Error('切换后选中的不是系统 mstsc'); const res=await window.api.settings.get(); if(!res.ok) throw new Error('settings.get 失败'); if(res.data.sessionMode!=='mstsc') throw new Error('sessionMode 未持久化: '+res.data.sessionMode); return { selected: selected[0].innerText.trim().slice(0,20), persisted: res.data.sessionMode }; })()"
+    },
+    { "shot": ".tmp/ui-shots/settings-engines.png" }
+  ]
+}

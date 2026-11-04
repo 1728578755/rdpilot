@@ -1,0 +1,41 @@
+{
+  "wait": 3500,
+  "steps": [
+    { "rightClick": "[data-row-index=\"0\"]" },
+    { "wait": 400 },
+    { "click": { "text": "编辑", "exact": true } },
+    { "wait": 700 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (!dialog) throw new Error('编辑抽屉未打开'); const input = Array.from(dialog.querySelectorAll('input[aria-label]')).find((el) => el.getAttribute('aria-label') === '标签'); if (!input) throw new Error('找不到标签输入框（aria-label=标签）；现有输入: ' + Array.from(dialog.querySelectorAll('input')).map((el) => el.getAttribute('aria-label') || el.placeholder || el.type).join(' | ')); return { opened: true, tagPlaceholder: input.placeholder, tagLabel: input.getAttribute('aria-label') }; })()"
+    },
+    { "click": { "placeholder": "输入后按回车或逗号添加" } },
+    { "wait": 150 },
+    { "type": "QA-TAG-1" },
+    { "press": "Enter" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=dialog][aria-modal=true]'); if (!dialog) throw new Error('输入标签后抽屉被关闭'); const chips = Array.from(dialog.querySelectorAll('span')).filter((el) => (el.textContent || '').trim() === 'QA-TAG-1'); if (chips.length === 0) throw new Error('标签 chip 未出现；抽屉文本: ' + (dialog.innerText || '').slice(0, 200)); const counter = Array.from(dialog.querySelectorAll('span')).map((el) => (el.textContent || '').trim()).find((text) => /^\\d+\\/\\d+$/.test(text)); if (!counter || !counter.startsWith('1/')) throw new Error('标签计数应显示 1/N，实际: ' + counter); return { chip: true, counter }; })()"
+    },
+    { "click": { "text": "保存", "exact": true } },
+    { "wait": 1000 },
+    {
+      "eval": "(async () => { if (document.querySelector('[role=dialog][aria-modal=true]')) throw new Error('保存后编辑抽屉未关闭'); const res = await window.api.connections.list(); if (!res.ok) throw new Error('connections.list 失败'); const conn = res.data.find((item) => item.id === 'ui-seed-01'); if (!conn) throw new Error('找不到种子连接 ui-seed-01'); if (!Array.isArray(conn.tags) || !conn.tags.includes('QA-TAG-1')) throw new Error('标签未持久化到 ui-seed-01，实际: ' + JSON.stringify(conn.tags)); const others = res.data.filter((item) => item.id !== 'ui-seed-01' && Array.isArray(item.tags) && item.tags.includes('QA-TAG-1')); if (others.length > 0) throw new Error('标签误写到了其他连接: ' + others.map((item) => item.id).join(',')); return { persisted: true, tags: conn.tags }; })()"
+    },
+    { "click": "button[aria-label=\"筛选\"]" },
+    { "wait": 450 },
+    {
+      "eval": "(() => { const panel = Array.from(document.querySelectorAll('[role=dialog]')).find((el) => (el.getAttribute('aria-label') || '').includes('筛选主机')); if (!panel) throw new Error('筛选浮层未打开；现有 dialog: ' + Array.from(document.querySelectorAll('[role=dialog]')).map((el) => el.getAttribute('aria-label') || el.innerText.slice(0, 20)).join(' | ')); const tagButton = Array.from(panel.querySelectorAll('button')).find((el) => (el.getAttribute('title') || el.textContent || '').trim() === 'QA-TAG-1'); if (!tagButton) throw new Error('筛选浮层里没有 QA-TAG-1 标签按钮；浮层文本: ' + (panel.innerText || '').slice(0, 240)); return { panelOpen: true, tagButton: true }; })()"
+    },
+    { "click": { "text": "QA-TAG-1", "exact": true } },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const rows = Array.from(document.querySelectorAll('[data-row-index]')); if (rows.length !== 1) throw new Error('按标签筛选后应剩 1 行，实际 ' + rows.length); const text = rows[0].innerText || ''; if (!text.includes('内网-01')) throw new Error('筛选结果不是内网-01: ' + text.slice(0, 80)); return { rows: rows.length, first: text.split('\\n')[0] }; })()"
+    },
+    { "click": { "text": "清除全部筛选", "exact": true } },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const rows = document.querySelectorAll('[data-row-index]'); if (rows.length !== 4) throw new Error('清除筛选后应恢复 4 行，实际 ' + rows.length); const trigger = Array.from(document.querySelectorAll('button[aria-label]')).find((el) => (el.getAttribute('aria-label') || '').trim() === '筛选'); if (!trigger) throw new Error('清除后筛选按钮 aria-label 应回到「筛选」（无计数）'); const overflow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth; if (overflow > 1) throw new Error('文档横向溢出 ' + overflow + 'px'); return { rows: rows.length, triggerLabel: trigger.getAttribute('aria-label'), overflow }; })()"
+    },
+    { "shot": ".tmp/ui-shots/tags.png" }
+  ]
+}

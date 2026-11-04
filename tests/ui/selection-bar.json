@@ -1,0 +1,24 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "eval": "(() => { const root=document.querySelector('[data-scroll-root=true]'); if (!root) throw new Error('缺少主滚动区'); window.__pad0 = parseFloat(getComputedStyle(root).paddingBottom) || 0; root.scrollTop = root.scrollHeight; const rows=[...document.querySelectorAll('[data-row-index]')]; if (rows.length < 20) throw new Error('行数不足（需要长列表才能验证贴底遮挡）: '+rows.length); return { rows: rows.length, pad0: window.__pad0 }; })()"
+    },
+    { "wait": 300 },
+    { "click": "[data-row-index=\"24\"]" },
+    { "wait": 250 },
+    { "click": "[data-row-index=\"25\"]", "modifiers": ["ctrl"] },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const root=document.querySelector('[data-scroll-root=true]'); const bar=document.querySelector('[data-selection-bar]'); if (!bar) throw new Error('选中 2 行后操作条未出现'); const rows=[...document.querySelectorAll('[data-row-index]')]; const last=rows[rows.length-1]; const lr=last.getBoundingClientRect(); const br=bar.getBoundingClientRect(); if (lr.bottom > br.top + 0.5) throw new Error('最后一行被操作条遮挡: row.bottom='+lr.bottom.toFixed(1)+' bar.top='+br.top.toFixed(1)); const pad=parseFloat(getComputedStyle(root).paddingBottom) || 0; const reserve=pad - window.__pad0; const expected=Math.ceil(br.height) + 24; if (Math.abs(reserve - expected) > 1.5) throw new Error('底部留白不等于条高+24: reserve='+reserve+' expected='+expected+' barH='+br.height.toFixed(1)); const varValue=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--selection-bar-space')) || 0; if (Math.abs(varValue - expected) > 1.5) throw new Error('CSS 变量与留白不一致: '+varValue+' vs '+expected); return { barH: +br.height.toFixed(1), reserve, expected, varValue, lastRowBottom: +lr.bottom.toFixed(1), barTop: +br.top.toFixed(1), scrollTop: Math.round(root.scrollTop) }; })()"
+    },
+    { "shot": ".tmp/b5-polish/selection-bar.png" },
+    {
+      "eval": "(() => { const bar=document.querySelector('[data-selection-bar]'); const cancel=[...bar.querySelectorAll('button')].find((b)=>(b.getAttribute('aria-label')||'').includes('取消')); if (!cancel) throw new Error('操作条缺少取消按钮'); cancel.click(); return 'canceled'; })()"
+    },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const root=document.querySelector('[data-scroll-root=true]'); const bar=document.querySelector('[data-selection-bar]'); if (bar) throw new Error('取消选择后操作条仍在'); const pad=parseFloat(getComputedStyle(root).paddingBottom) || 0; if (Math.abs(pad - window.__pad0) > 0.5) throw new Error('留白未还原: '+pad+' vs '+window.__pad0); const v=getComputedStyle(document.documentElement).getPropertyValue('--selection-bar-space'); if (v.trim() !== '') throw new Error('CSS 变量未清理: '+v); return { pad, restored: true }; })()"
+    }
+  ]
+}

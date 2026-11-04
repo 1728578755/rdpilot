@@ -1,0 +1,38 @@
+{
+  "wait": 3600,
+  "steps": [
+    {
+      "eval": "(() => { const row = document.querySelector('[data-row-index=\"0\"]'); if (!row) throw new Error('列表视图没有行'); const more = row.querySelector('button[aria-haspopup=\"menu\"]'); if (!more) throw new Error('行内找不到 ⋯ 按钮'); if (document.querySelectorAll('[role=\"menu\"]').length) throw new Error('开始时不该有菜单'); more.focus(); const probe = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }); more.dispatchEvent(probe); if (probe.defaultPrevented) throw new Error('行根节点仍对子按钮的 Enter 调用了 preventDefault（会吞掉按钮的合成 click）'); const flows = document.querySelectorAll('[data-row-index] .rp-flow').length; if (flows > 0) throw new Error('合成 Enter 冒泡到行根节点后触发了连接'); return { focused: document.activeElement === more, index: row.getAttribute('data-row-index'), defaultPrevented: probe.defaultPrevented, flows }; })()"
+    },
+    { "press": "Enter" },
+    { "wait": 450 },
+    {
+      "eval": "(() => { const menus = document.querySelectorAll('[role=\"menu\"]').length; if (!menus) throw new Error('在「⋯」上按 Enter 没有打开菜单：按钮的默认激活被行根节点吞掉了'); const rows = [...document.querySelectorAll('[data-row-index]')]; const flows = document.querySelectorAll('[data-row-index] .rp-flow').length; const text = (document.querySelector('[data-row-index=\"0\"]').innerText || '').replace(/\\s+/g, ' '); if (flows > 0 || text.includes('连接中')) throw new Error('在「⋯」上按 Enter 触发了连接: ' + text); return { menus, flows, rows: rows.length, rowText: text.slice(0, 40) }; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 250 },
+    {
+      "eval": "(async () => { const res = await window.api.settings.update({ layout: 'grid-3' }); if (!res.ok) throw new Error('切换卡片视图失败: ' + res.error.message); return { layout: res.data.layout }; })()"
+    },
+    { "wait": 1200 },
+    {
+      "eval": "(() => { const card = document.querySelector('[data-card-root=\"true\"]'); if (!card) throw new Error('卡片视图没有卡片'); const more = card.querySelector('button[aria-haspopup=\"menu\"]'); if (!more) throw new Error('卡片内找不到 ⋯ 按钮'); if (document.querySelectorAll('[role=\"menu\"]').length) throw new Error('切换视图后仍残留菜单'); more.focus(); const probe = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }); more.dispatchEvent(probe); if (probe.defaultPrevented) throw new Error('卡片根节点仍对子按钮的 Enter 调用了 preventDefault'); if (document.querySelectorAll('[data-card-root=\"true\"] .rp-flow').length) throw new Error('合成 Enter 冒泡到卡片根节点后触发了连接'); return { focused: document.activeElement === more, cards: document.querySelectorAll('[data-card-root=\"true\"]').length, defaultPrevented: probe.defaultPrevented }; })()"
+    },
+    { "press": "Enter" },
+    { "wait": 450 },
+    {
+      "eval": "(() => { const menus = document.querySelectorAll('[role=\"menu\"]').length; if (!menus) throw new Error('卡片「⋯」上按 Enter 没有打开菜单'); const flows = document.querySelectorAll('[data-card-root=\"true\"] .rp-flow').length; const card = document.querySelector('[data-card-root=\"true\"]'); const text = (card.innerText || '').replace(/\\s+/g, ' '); if (flows > 0 || text.includes('连接中')) throw new Error('卡片「⋯」上按 Enter 触发了连接: ' + text); return { menus, flows, cardText: text.slice(0, 40) }; })()"
+    },
+    { "press": "Escape" },
+    { "wait": 300 },
+    { "shot": ".tmp/b8-bugs/list-keyboard.png" },
+    {
+      "eval": "(() => { const card = document.querySelector('[data-card-root=\"true\"]'); if (!card) throw new Error('卡片消失'); card.focus(); return { focused: document.activeElement === card, flows: document.querySelectorAll('[data-card-root=\"true\"] .rp-flow').length }; })()"
+    },
+    { "press": "Enter" },
+    { "wait": 900 },
+    {
+      "eval": "(() => { const flows = document.querySelectorAll('[data-card-root=\"true\"] .rp-flow').length; const card = document.querySelector('[data-card-root=\"true\"]'); const text = (card.innerText || '').replace(/\\s+/g, ' '); if (flows === 0 && !text.includes('连接中')) throw new Error('卡片本体按 Enter 没有发起连接（回归）: ' + text); return { flows, cardText: text.slice(0, 40) }; })()"
+    }
+  ]
+}

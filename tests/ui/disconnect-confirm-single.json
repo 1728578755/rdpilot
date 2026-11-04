@@ -1,0 +1,29 @@
+{
+  "wait": 4200,
+  "steps": [
+    {
+      "eval": "(async () => { const r = await window.api.settings.update({ disconnectConfirm: 'always' }); if (!r.ok) throw new Error('设置写入失败'); await new Promise((res)=>setTimeout(res, 500)); return r.data.disconnectConfirm; })()"
+    },
+    { "click": "[data-row-index=\"0\"]" },
+    { "press": "Enter" },
+    { "wait": 9000 },
+    {
+      "eval": "(() => { const row=document.querySelector('[data-row-index=\"0\"]'); const text=(row.innerText||'').replace(/\\s+/g,' '); const btn=[...row.querySelectorAll('button')].find((b)=>/关闭窗口|断开|取消连接/.test(b.getAttribute('aria-label')||'')); if (!btn) throw new Error('没有可用的断开按钮，当前状态: '+text); window.__disconnectLabel = btn.getAttribute('aria-label'); btn.click(); return { state: text.slice(0,60), clicked: window.__disconnectLabel }; })()"
+    },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const dialog=document.querySelector('[role=dialog][aria-modal=true], [role=alertdialog][aria-modal=true]'); if (!dialog) throw new Error('disconnectConfirm=always 时点断开没有确认框'); const text=(dialog.innerText||'').replace(/\\s+/g,' '); if (!text.includes('断开')) throw new Error('确认框标题缺少断开: '+text.slice(0,100)); if (!text.includes('不等于注销')) throw new Error('确认框没有说明「断开 ≠ 注销」: '+text); if (!text.includes('远程登录会话')) throw new Error('确认框没有解释会话仍在服务器上: '+text); if (text.includes('注销用户') || text.includes('立即注销')) throw new Error('确认框承诺了不存在的注销动作: '+text); return { clicked: window.__disconnectLabel, text: text.slice(0,160) }; })()"
+    },
+    { "shot": ".tmp/b5-polish/disconnect-single-confirm.png" },
+    {
+      "eval": "(() => { const dialog=document.querySelector('[role=dialog][aria-modal=true], [role=alertdialog][aria-modal=true]'); const btn=[...dialog.querySelectorAll('button')].find((b)=>(b.innerText||'').trim()==='取消'); if (!btn) throw new Error('确认框缺少取消'); btn.click(); return 'cancel'; })()"
+    },
+    { "wait": 500 },
+    {
+      "eval": "(() => { if (document.querySelector('[role=alertdialog][aria-modal=true]')) throw new Error('取消后确认框未关闭'); const row=document.querySelector('[data-row-index=\"0\"]'); if (!row) throw new Error('取消后行消失'); const btn=[...row.querySelectorAll('button')].find((b)=>/关闭窗口|断开|取消连接/.test(b.getAttribute('aria-label')||'')); if (!btn) throw new Error('取消后会话状态被改变（动作按钮消失）: '+row.innerText); if (!/未建立连接/.test(row.innerText||'')) throw new Error('取消后状态文案变了: '+row.innerText); return { kept: true, action: btn.getAttribute('aria-label') }; })()"
+    },
+    {
+      "eval": "(async () => { await window.api.settings.update({ disconnectConfirm: 'never' }); return 'restored'; })()"
+    }
+  ]
+}

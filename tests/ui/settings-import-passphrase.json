@@ -1,0 +1,54 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "click": {
+        "text": "设置",
+        "exact": true
+      }
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "eval": "(() => { const dlg = document.querySelector('[role=\"dialog\"]'); if (dlg) { const btn = [...dlg.querySelectorAll('button')].find((b) => ['稍后','Later'].includes((b.textContent||'').trim())); if (btn) btn.click(); } const nav = document.querySelector('button[data-settings-nav=\"true\"][data-section-id=\"settings-data\"]'); if (nav) nav.click(); return Boolean(document.getElementById('settings-data')); })()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const row = [...document.querySelectorAll('#settings-data [data-setting-row]')].find((r) => (r.textContent || '').includes('选择文件')); if (!row) throw new Error('没有找到「恢复配置」行'); const btn = [...row.querySelectorAll('button')].find((b) => (b.textContent || '').trim() === '选择文件'); if (!btn) throw new Error('没有找到「选择文件」按钮'); btn.click(); return true; })()"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "(() => { const host = document.querySelector('[data-rp-import-passphrase]'); if (!host) throw new Error('含密码的备份没有弹出「输入导出密码」对话框（挂载点缺失）'); const dialog = host.querySelector('[role=\"dialog\"]'); if (!dialog) throw new Error('口令对话框没有渲染'); const pwd = dialog.querySelector('input[type=\"password\"]'); if (!pwd) throw new Error('口令对话框里没有密码输入框'); return { mounted: true, title: (dialog.textContent || '').slice(0, 40), hasInput: true }; })()"
+    },
+    {
+      "eval": "(() => { const host = document.querySelector('[data-rp-import-passphrase]'); const dialog = host.querySelector('[role=\"dialog\"]'); const input = dialog.querySelector('input[type=\"password\"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(input, 'wrong-pass-123'); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); return input.value; })()"
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "(() => { const host = document.querySelector('[data-rp-import-passphrase]'); const dialog = host.querySelector('[role=\"dialog\"]'); const text = dialog.textContent || ''; if (!/尝试|次数|不对|错误/.test(text)) throw new Error('错误口令没有给出剩余次数提示: ' + text.slice(0, 80)); const input = dialog.querySelector('input[type=\"password\"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(input, 'B8-Ui-Export-2026'); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); return { wrongRejected: true }; })()"
+    },
+    {
+      "wait": 20000
+    },
+    {
+      "eval": "(() => { const host = document.querySelector('[data-rp-import-passphrase]'); if (!host) throw new Error('口令成功后对话框被提前卸载，没有结果页'); const dialog = host.querySelector('[role=\"dialog\"]'); const text = dialog.textContent || ''; if (!/已导入/.test(text)) throw new Error('结果页没有「已导入」结论: ' + text.slice(0, 80)); if (!/密码/.test(text)) throw new Error('结果页没有说明导入了多少条密码: ' + text.slice(0, 80)); return { resultText: text.replace(/\\s+/g, ' ').slice(0, 60) }; })()"
+    },
+    {
+      "eval": "(() => { const host = document.querySelector('[data-rp-import-passphrase]'); const dialog = host.querySelector('[role=\"dialog\"]'); const done = [...dialog.querySelectorAll('button')].find((b) => /完成|关闭/.test((b.textContent || '').trim())); if (!done) throw new Error('结果页没有「完成」按钮'); done.click(); return true; })()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "(() => { if (document.querySelector('[data-rp-import-passphrase]')) throw new Error('点完成后挂载点没有移除'); const rows = [...document.querySelectorAll('[data-settings-content=\"true\"] [data-setting-row]')].length; return { hostRemoved: true, settingsRows: rows }; })()"
+    }
+  ]
+}
+

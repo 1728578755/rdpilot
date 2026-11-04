@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mrng:Connections xmlns:mrng="http://mremoteng.org" Name="Connections" Export="false" EncryptionEngine="AES" BlockCipherMode="GCM" KdfIterations="1000" FullFileEncryption="false" Protected="" ConfVersion="2.6">
+  <Node Name="Root RDP" Type="Connection" Descr="top of file" Hostname="10.10.0.1" Port="3389" Username="CORP\alice" Domain="CORP" Protocol="RDP" ConnectToConsole="false" RedirectClipboard="true" RedirectDrives="false" Resolution="FitToWindow" Colors="Colors32Bit" />
+  <Container Name="生产" Type="Container" Expanded="true">
+    <Node Name="DB 01" Type="Connection" Descr="数据库主库" Hostname="10.10.1.11" Port="3390" Username="dba" Domain="" Password="3q2+7wAAAAencryptedblob" Protocol="RDP" RedirectClipboard="false" Resolution="1600x900" Colors="Colors24Bit" ConnectToConsole="true" GatewayHostname="rdgw.corp.local" GatewayUsageMethod="1" />
+    <Container Name="内网" Type="Container">
+      <Node Name="Legacy" Type="Connection" Hostname="10.10.2.21" Port="3389" Protocol="RDP" />
+    </Container>
+  </Container>
+  <Node Name="VNC box" Type="Connection" Hostname="10.10.3.31" Port="5900" Protocol="VNC" />
+</mrng:Connections>

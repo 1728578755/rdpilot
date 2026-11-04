@@ -1,0 +1,23 @@
+{
+  "wait": 4000,
+  "steps": [
+    {
+      "eval": "(async () => { const res = await window.api.settings.update({ layout: 'grid-3' }); if (!res || !res.ok) throw new Error('切换网格失败: '+JSON.stringify(res)); await new Promise((r)=>setTimeout(r, 1000)); return 'grid'; })()"
+    },
+    { "wait": 500 },
+    {
+      "eval": "(() => { const cards=[...document.querySelectorAll('[data-card-root]')]; if (cards.length===0) throw new Error('没有卡片（[data-card-root]）'); const bad=[], missing=[], labels=[]; for (const card of cards) { const label=card.getAttribute('aria-label')||''; if (!label) throw new Error('卡片缺少 aria-label'); const cp=[...label].length; if (cp>80) bad.push({ cp, label: label.slice(0,40) }); const id=card.getAttribute('aria-describedby'); if (!id) throw new Error('卡片缺少 aria-describedby: '+label); const detail=document.getElementById(id); if (!detail) throw new Error('aria-describedby 指向的节点不存在: '+id); if (!(detail.textContent||'').trim()) throw new Error('aria-describedby 详情为空: '+label); labels.push(label); } if (bad.length) throw new Error('aria-label 超过 80 字符: '+JSON.stringify(bad)); const long=labels.find((l)=>l.includes('…')); if (!long) throw new Error('没有任何超长名称被截断（fixture 是否生效？）: '+JSON.stringify(labels.slice(0,2))); const withAddr=labels.filter((l)=>/:\\d+/.test(l)).length; if (withAddr < Math.ceil(labels.length*0.8)) throw new Error('多数 label 里应有地址，实际 '+withAddr+'/'+labels.length+': '+JSON.stringify(labels.slice(0,3))); if (!labels[0].includes('127.0.0.1:3391')) throw new Error('超长名称卡片的 label 缺地址: '+labels[0]); const first=cards[0]; const detail=document.getElementById(first.getAttribute('aria-describedby')); const text=detail.textContent||''; if (text.includes('127.0.0.1:')) throw new Error('地址在 label 与详情里重复出现: '+text); if (!text.includes('tester')) throw new Error('详情缺少账号: '+text); return { cards: cards.length, max: Math.max(...labels.map((l)=>[...l].length)), truncated: labels.filter((l)=>l.includes('…')).length, firstLabel: labels[0], firstDetail: text.slice(0,120) }; })()"
+    },
+    { "shot": ".tmp/b5-polish/card-aria-grid.png" },
+    {
+      "eval": "(async () => { const res = await window.api.settings.update({ layout: 'list' }); if (!res || !res.ok) throw new Error('切换列表失败: '+JSON.stringify(res)); await new Promise((r)=>setTimeout(r, 900)); return 'list'; })()"
+    },
+    {
+      "eval": "(() => { const rows=[...document.querySelectorAll('[data-row-index]')]; if (rows.length===0) throw new Error('列表没有行'); const bad=[]; for (const row of rows) { const label=row.getAttribute('aria-label')||''; if (!label) throw new Error('行缺少 aria-label'); const cp=[...label].length; if (cp>80) bad.push({ cp, label: label.slice(0,40) }); const id=row.getAttribute('aria-describedby'); if (!id) throw new Error('行缺少 aria-describedby'); const detail=document.getElementById(id); if (!detail || !(detail.textContent||'').trim()) throw new Error('行详情为空: '+label); } if (bad.length) throw new Error('行 aria-label 超过 80 字符: '+JSON.stringify(bad)); return { rows: rows.length, max: Math.max(...rows.map((r)=>[...(r.getAttribute('aria-label')||'')].length)), first: rows[0].getAttribute('aria-label') }; })()"
+    },
+    { "shot": ".tmp/b5-polish/card-aria-list.png" },
+    {
+      "eval": "(async () => { const res = await window.api.settings.update({ layout: 'grid-3' }); if (!res || !res.ok) throw new Error('恢复网格失败'); return 'restored'; })()"
+    }
+  ]
+}

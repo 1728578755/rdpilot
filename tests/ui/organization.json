@@ -1,0 +1,38 @@
+{
+  "wait": 3500,
+  "steps": [
+    {
+      "eval": "(async () => { const values = { groupId: null, colorTag: '', displayMode: 'window', resolution: { w: 1280, h: 720 }, colorDepth: 32, audioMode: 'local', clipboard: true, drives: false, printers: false, smartCard: false, serial: false, camera: false, tags: ['TPL-UI'], environment: 'test', gateway: null, adminSession: false, alternateShell: null, sessionOverride: 'auto', smartSizing: true, advanced: {} }; const created = await window.api.organization.createTemplate({ name: 'UI-TPL-01', description: '批量场景模板', values }); if (!created.ok) throw new Error('创建模板失败: ' + created.error.message); const view = await window.api.organization.saveView({ name: 'UI-VIEW-01', icon: null, query: '10.68', groupId: null, tagFilters: [], environments: ['test'], favoritesOnly: false, layout: 'list', sort: 'name' }); if (!view.ok) throw new Error('保存视图失败: ' + view.error.message); return { templateId: created.data.id, viewId: view.data.id }; })()"
+    },
+    {
+      "click": { "text": "设置", "exact": true }
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "(() => { const section = document.querySelector('#settings-organization'); if (!section) throw new Error('设置页缺少组织分节'); section.scrollIntoView({ block: 'center' }); const text = section.innerText || ''; if (!text.includes('UI-TPL-01') && !text.includes('模板')) throw new Error('组织分节未渲染模板入口: ' + text.slice(0, 160)); return { section: true, hasTemplateEntry: true }; })()"
+    },
+    {
+      "click": { "text": "管理模板", "exact": true }
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "(() => { const dialog = [...document.querySelectorAll('[role=\"dialog\"]')].find((el) => (el.innerText || '').includes('UI-TPL-01')); if (!dialog) throw new Error('模板管理弹窗未显示新建模板'); return { open: true, hasTemplate: true }; })()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "(async () => { const views = await window.api.organization.views(); if (!views.ok) throw new Error('视图列表失败'); const item = views.data.find((entry) => entry.name === 'UI-VIEW-01'); if (!item) throw new Error('保存视图未持久化'); if (item.layout !== 'list' || item.query !== '10.68') throw new Error('视图字段未保留: ' + JSON.stringify(item)); const dup = await window.api.organization.duplicates(); if (!dup.ok) throw new Error('重复检测失败'); return { views: views.data.length, duplicates: dup.data.total, layout: item.layout }; })()"
+    },
+    {
+      "shot": ".tmp/ui-shots/organization.png"
+    }
+  ]
+}

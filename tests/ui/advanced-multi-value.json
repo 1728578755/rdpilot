@@ -1,0 +1,68 @@
+{
+  "wait": 3600,
+  "steps": [
+    { "click": "[data-sidebar-quick=\"create\"]" },
+    { "wait": 700 },
+    { "click": { "placeholder": "host:port" } },
+    { "type": "192.0.2.88" },
+    { "clickText": "高级连接" },
+    { "wait": 600 },
+    {
+      "eval": "(() => { const selects = [...document.querySelectorAll('[role=\"dialog\"][aria-modal=\"true\"] select')]; const target = selects.find((el) => { const label = el.closest('div.flex.flex-col')?.querySelector('label'); return label && label.innerText.includes('显示器'); }) || selects.find((el) => [...el.options].some((o) => o.value === 'selection')); if (!target) throw new Error('找不到显示器模式下拉'); const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; setter.call(target, 'selection'); target.dispatchEvent(new Event('change', { bubbles: true })); return { monitors: selects.length }; })()"
+    },
+    { "wait": 400 },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"monitorIds\"]'); if (!el) throw new Error('显示器 ID 输入框未出现'); return { value: el.value, placeholder: el.placeholder }; })()"
+    },
+    { "click": "[data-advanced-input=\"monitorIds\"]" },
+    { "type": "1," },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"monitorIds\"]'); if (el.value !== '1,') throw new Error('键入「1,」后逗号被吞掉，实际=' + JSON.stringify(el.value)); return { afterComma: el.value }; })()"
+    },
+    { "type": " 2" },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"monitorIds\"]'); if (el.value !== '1, 2') throw new Error('键入「1, 2」后原文被改写，实际=' + JSON.stringify(el.value)); return { draft: el.value }; })()"
+    },
+    { "press": "Enter" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"monitorIds\"]'); if (el.value !== '1,2') throw new Error('Enter 后未规范化成 1,2，实际=' + JSON.stringify(el.value)); const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); if (!dialog) throw new Error('输入框内按 Enter 把抽屉提交掉了'); return { committed: el.value }; })()"
+    },
+    { "shot": ".tmp/b8-bugs/multi-value-input.png" },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); const head = [...dialog.querySelectorAll('button')].find((b) => (b.innerText || '').trim().startsWith('重定向')); if (!head) throw new Error('找不到「重定向」分组'); head.click(); return { opened: head.getAttribute('aria-expanded') }; })()"
+    },
+    { "wait": 350 },
+    { "click": "[data-advanced-input=\"driveLetters\"]" },
+    { "type": "cd," },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"driveLetters\"]'); if (el.value !== 'cd,') throw new Error('盘符键入「cd,」后原文被改写，实际=' + JSON.stringify(el.value)); return { afterComma: el.value }; })()"
+    },
+    { "type": "e" },
+    { "press": "Tab" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"driveLetters\"]'); if (el.value !== 'C,D,E') throw new Error('盘符提交后应为 C,D,E，实际=' + JSON.stringify(el.value)); return { committed: el.value }; })()"
+    },
+    {
+      "eval": "(() => { const dialog = document.querySelector('[role=\"dialog\"][aria-modal=\"true\"]'); const head = [...dialog.querySelectorAll('button')].find((b) => (b.innerText || '').trim().startsWith('网络')); if (!head) throw new Error('找不到「网络」分组'); head.click(); return { opened: head.getAttribute('aria-expanded') }; })()"
+    },
+    { "wait": 350 },
+    { "click": "[data-advanced-input=\"connectTimeoutSec\"]" },
+    { "type": "1" },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"connectTimeoutSec\"]'); if (el.value !== '1') throw new Error('连接超时键入「1」被即时钳制为 ' + JSON.stringify(el.value)); return { draft: el.value }; })()"
+    },
+    { "type": "20" },
+    { "press": "Tab" },
+    { "wait": 350 },
+    {
+      "eval": "(() => { const el = document.querySelector('[data-advanced-input=\"connectTimeoutSec\"]'); if (el.value !== '120') throw new Error('连接超时提交后应为 120，实际=' + JSON.stringify(el.value)); return { committed: el.value }; })()"
+    },
+    { "click": { "text": "保存", "exact": true } },
+    { "wait": 1000 },
+    {
+      "eval": "(async () => { const list = await window.api.connections.list(); if (!list.ok) throw new Error('list 失败'); const conn = list.data.find((entry) => entry.host === '192.0.2.88'); if (!conn) throw new Error('保存后找不到新连接'); if (JSON.stringify(conn.advanced.monitorIds) !== JSON.stringify(['1', '2'])) throw new Error('显示器 ID 未按 1,2 落库: ' + JSON.stringify(conn.advanced.monitorIds)); if (JSON.stringify(conn.advanced.driveLetters) !== JSON.stringify(['C', 'D', 'E'])) throw new Error('盘符未按 C,D,E 落库: ' + JSON.stringify(conn.advanced.driveLetters)); if (conn.advanced.connectTimeoutSec !== 120) throw new Error('连接超时未落库 120: ' + conn.advanced.connectTimeoutSec); return { monitorIds: conn.advanced.monitorIds, driveLetters: conn.advanced.driveLetters, connectTimeoutSec: conn.advanced.connectTimeoutSec }; })()"
+    }
+  ]
+}

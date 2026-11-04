@@ -1,0 +1,19 @@
+{
+  "wait": 3200,
+  "steps": [
+    { "eval": "(() => { const rows=[...document.querySelectorAll('[data-row-index]')]; const boxes=document.querySelectorAll('[data-row-index] input[type=checkbox]'); if (!rows.length) throw new Error('没有列表行'); if (boxes.length) throw new Error('列表仍有复选框: ' + boxes.length); return { rows: rows.length, checkboxes: boxes.length }; })()" },
+    { "click": "[data-row-index=\"0\"]" },
+    { "wait": 300 },
+    { "eval": "(() => { const sel=[...document.querySelectorAll('[data-row-index]')].filter(r=>r.className.includes('row-active')).map(r=>Number(r.getAttribute('data-row-index'))); if (JSON.stringify(sel)!=='[0]') throw new Error('单击应只选中 0，实际 '+JSON.stringify(sel)); if (document.querySelectorAll('[role=\"toolbar\"]').length) throw new Error('只选 1 行不应出现批量条'); return sel; })()" },
+    { "click": "[data-row-index=\"1\"]", "modifiers": ["ctrl"] },
+    { "wait": 300 },
+    { "eval": "(() => { const sel=[...document.querySelectorAll('[data-row-index]')].filter(r=>r.className.includes('row-active')).map(r=>Number(r.getAttribute('data-row-index'))); if (JSON.stringify(sel)!=='[0,1]') throw new Error('Ctrl 单击后应为 [0,1]，实际 '+JSON.stringify(sel)); const bar=[...document.querySelectorAll('[role=\"toolbar\"]')].find(b=>b.innerText.includes('已选')); if (!bar) throw new Error('选中 2 行后批量条未出现'); return { sel, bar: bar.innerText.trim().slice(0,20) }; })()" },
+    { "click": "[data-row-index=\"2\"]", "modifiers": ["shift"] },
+    { "wait": 300 },
+    { "eval": "(() => { const sel=[...document.querySelectorAll('[data-row-index]')].filter(r=>r.className.includes('row-active')).map(r=>Number(r.getAttribute('data-row-index'))); if (JSON.stringify(sel)!=='[0,1,2]') throw new Error('Shift 单击后应为 [0,1,2]，实际 '+JSON.stringify(sel)); return sel; })()" },
+    { "click": "[data-row-index=\"3\"]" },
+    { "wait": 300 },
+    { "eval": "(() => { const sel=[...document.querySelectorAll('[data-row-index]')].filter(r=>r.className.includes('row-active')).map(r=>Number(r.getAttribute('data-row-index'))); if (JSON.stringify(sel)!=='[3]') throw new Error('普通单击后应只剩 [3]，实际 '+JSON.stringify(sel)); const bar=[...document.querySelectorAll('[role=\"toolbar\"]')].find(b=>b.innerText.includes('已选')); if (bar) throw new Error('只选 1 行时批量条仍在'); return sel; })()" },
+    { "shot": ".tmp/ui-shots/list-selection.png" }
+  ]
+}

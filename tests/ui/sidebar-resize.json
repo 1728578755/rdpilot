@@ -1,0 +1,17 @@
+{
+  "wait": 3200,
+  "steps": [
+    { "eval": "(() => { const aside = document.querySelector('aside'); const sep = document.querySelector('[role=\"separator\"]'); if (!aside || !sep) throw new Error('缺少侧栏或拖柄'); return { width: Math.round(aside.getBoundingClientRect().width), separator: true }; })()" },
+    { "eval": "(() => { document.querySelector('[role=\"separator\"]').focus(); return document.activeElement?.getAttribute('role'); })()" },
+    { "press": "ArrowRight" },
+    { "wait": 120 },
+    { "press": "ArrowRight" },
+    { "wait": 120 },
+    { "press": "ArrowRight" },
+    { "wait": 600 },
+    { "eval": "(async () => { const aside = Math.round(document.querySelector('aside').getBoundingClientRect().width); const res = await window.api.settings.get(); if (!res.ok) throw new Error('settings.get 失败'); if (aside !== 204) throw new Error('三按右箭头后宽度应为 204，实际 ' + aside); if (res.data.sidebarWidth !== 204) throw new Error('设置未持久化: ' + res.data.sidebarWidth); return { width: aside, persisted: res.data.sidebarWidth }; })()" },
+    { "press": "Home" },
+    { "wait": 600 },
+    { "eval": "(async () => { const aside = Math.round(document.querySelector('aside').getBoundingClientRect().width); const res = await window.api.settings.get(); if (!res.ok) throw new Error('settings.get 失败'); if (aside !== 180) throw new Error('Home 后应恢复 180，实际 ' + aside); if (res.data.sidebarWidth !== 180) throw new Error('复位未持久化: ' + res.data.sidebarWidth); return { width: aside, persisted: res.data.sidebarWidth }; })()" }
+  ]
+}
