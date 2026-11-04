@@ -354,6 +354,10 @@ try {
 await check('registry MRU', async () => {
   if (!registry) return { status: 'FAIL', detail: `打包失败: ${runtimeError}` }
   const res = await registry.queryKey(registry.DEFAULT_KEY, false)
+  // 全新机器 / CI runner 从未用过远程桌面，键不存在是正常状态，不是失败
+  if (!res.ok && res.reason === 'REG_KEY_MISSING') {
+    return { status: 'WARN', detail: `本机无 MRU 历史（首次运行） channel=${res.channel}` }
+  }
   if (!res.ok) return { status: 'FAIL', detail: `ok=false reason=${res.reason} channel=${res.channel}` }
 
   const count = Array.from({ length: 10 }, (_, i) => res.values[`MRU${i}`]).filter(Boolean).length
@@ -365,6 +369,9 @@ await check('registry MRU', async () => {
 await check('registry servers', async () => {
   if (!registry) return { status: 'FAIL', detail: `打包失败: ${runtimeError}` }
   const res = await registry.queryKey(registry.SERVERS_KEY, true)
+  if (!res.ok && res.reason === 'REG_KEY_MISSING') {
+    return { status: 'WARN', detail: `本机无 Servers 子键（首次运行） channel=${res.channel}` }
+  }
   if (!res.ok) return { status: 'FAIL', detail: `ok=false reason=${res.reason} channel=${res.channel}` }
   return { detail: `${res.subKeys.length} 个子键 channel=${res.channel}` }
 })
