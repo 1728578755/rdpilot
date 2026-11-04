@@ -35,7 +35,7 @@ machine.
 
 ## Build from source
 
-Requirements: Windows 10 1809+ / Windows 11 (x64), Node.js 20+, and the `csc.exe` that ships with
+Requirements: Windows 10 1809+ / Windows 11 (x64), Node.js 22+, and the `csc.exe` that ships with
 .NET Framework 4.8 (present by default on Windows 10/11).
 
 ```bash

@@ -69,7 +69,7 @@
 **环境要求**
 
 - Windows 10 1809+ / Windows 11（x64）
-- Node.js 20+
+- Node.js 22+
 - 构建原生组件需要 .NET Framework 4.8 自带的 `csc.exe`（Windows 10/11 默认存在）
 
 ```bash
